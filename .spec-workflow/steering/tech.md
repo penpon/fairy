@@ -86,23 +86,6 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 
      Co-Authored-By: Claude <noreply@anthropic.com>
      ```
-   - **コミットメッセージ例**:
-     ```
-     RaprasScraperクラスの実装
-
-     Raprasサイトへの自動ログイン機能を実装:
-     - ユーザー名・パスワード認証
-     - セッション復元機能
-     - リトライロジック（指数バックオフ: 2秒, 4秒, 8秒）
-     - 30秒タイムアウト処理
-     - ログイン後のセッション自動保存
-
-     Related: Requirement 1 (Rapras認証), Requirement 4 (エラーハンドリング)
-
-     🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-     Co-Authored-By: Claude <noreply@anthropic.com>
-     ```
    - **Git操作例**:
      - モジュール実装時: `git add modules/scraper/rapras_scraper.py && git commit -m "RaprasScraperクラスの実装..."`
      - テスト実装時: `git add tests/test_scraper/test_rapras_scraper.py && git commit -m "RaprasScraperのユニットテスト実装..."`
