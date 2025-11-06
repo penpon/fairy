@@ -50,7 +50,7 @@ RAPRAS_PASSWORD=your_rapras_password
 YAHOO_PHONE_NUMBER=09012345678
 
 # プロキシ設定（Yahoo Auctions用）
-PROXY_URL=http://164.70.96.2:3128
+PROXY_URL=https://proxy.example.com:3128
 PROXY_USERNAME=your_proxy_username
 PROXY_PASSWORD=your_proxy_password
 ```

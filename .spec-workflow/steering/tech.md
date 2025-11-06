@@ -36,7 +36,20 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 ### External Integrations（Phase 1-2）
 - **Rapras** (https://www.rapras.jp)
 - **Yahoo! Auctions**
-  - **Proxy**: http://164.70.96.2:3128（ヤフーオークションへのアクセスはプロキシ経由）
+  - **Proxy**: ヤフーオークションへのアクセスはプロキシ経由で実施
+    - **URL**: `http://YOUR_PROXY_SERVER:PORT` または `http://user:pass@YOUR_PROXY_SERVER:PORT`（BASIC認証対応）
+    - **環境変数**:
+      - `PROXY_URL`: プロキシサーバーのURL（例：`http://proxy.example.com:3128`）
+      - `PROXY_USERNAME`: BASIC認証用ユーザー名（省略可）
+      - `PROXY_PASSWORD`: BASIC認証用パスワード（省略可）
+    - **.env.example の設定例**:
+      ```
+      # プロキシサーバー設定（.envに実際の値を設定）
+      PROXY_URL=http://proxy.example.com:3128
+      PROXY_USERNAME=your_username
+      PROXY_PASSWORD=your_password
+      ```
+    - 実際のプロキシ設定は内部ドキュメント、または `.env` ファイルで管理
 
 ## Development Environment
 
@@ -47,6 +60,7 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 - **Formatting**: Black（自動フォーマット）
 - **Linting & Import Management**: Ruff（スタイルチェック、import 整理含む）
 - **Testing Framework**: pytest（実装予定）
+- **Async Testing**: pytest-asyncio（async/await関数のテスト対応）
 - **Test Coverage**: pytest-cov（カバレッジ率 80% 以上を必須維持）
 - **Security**: bandit, safety
 - **Documentation**: Sphinx / MkDocs（計画中）
@@ -61,6 +75,7 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
    - 自動修正可能な問題を修正、手動対応が必要なエラーはここで対処
 3. **Unit Testing**: `pytest tests/ -v`（または `make test`）
    - **失敗時は必ず修正**（テスト削除は禁止）
+   - **Async Tests対応**: `pytest.ini`に`asyncio_mode = auto`を設定し、pytest-asyncioプラグイン有効化
 4. **Coverage Check**: `pytest --cov=modules --cov-report=html`
    - **カバレッジ80%以上必須**（未達時は追加テスト作成）
    - レポート: `htmlcov/index.html`
@@ -122,7 +137,7 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 
 ### Quality & Reliability
 - **Test Coverage**: 80% 以上を必須維持
-- **Parallel Processing**: 複数セラー並行処理（必須）
+- **Parallel Processing**: 複数セラー並行処理（計画中 — 現状未実装、将来実装予定）
 
 ### Security
 - **Authentication**: SMS 認証対応

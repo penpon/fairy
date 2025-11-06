@@ -34,9 +34,11 @@ class RaprasScraper:
         self.browser: Browser | None = None
         self.context: BrowserContext | None = None
         self.page: Page | None = None
+
         self._max_retries = 3
-        self._retry_delays = [2, 4, 8]  # 指数バックオフ（秒）
-        self._timeout = 30000  # 30秒（ミリ秒）
+        # 指数バックオフ：2^1=2, 2^2=4, 2^3=8秒
+        self._retry_delays = [2**i for i in range(1, self._max_retries + 1)]
+        self._timeout = 30000  # 30秒（ミリ秒）  # 30秒（ミリ秒）  # 30秒（ミリ秒）  # 30秒（ミリ秒）
 
     async def login(self, username: str, password: str) -> bool:
         """Raprasにログイン
@@ -46,7 +48,7 @@ class RaprasScraper:
             password: Raprasパスワード
 
         Returns:
-            ログイン成功時True、失敗時False
+            ログイン成功時True
 
         Raises:
             LoginError: ログイン処理に失敗した場合
@@ -65,6 +67,8 @@ class RaprasScraper:
                             return True
                         else:
                             logger.warning("Session restoration failed, proceeding with login")
+                            # 復元されたブラウザをクリーンアップ
+                            await self._close_browser()
 
                 # ブラウザを起動
                 await self._launch_browser()
@@ -105,8 +109,6 @@ class RaprasScraper:
                     await self._retry_with_backoff(attempt)
                 else:
                     raise LoginError(f"Login failed after {self._max_retries} attempts: {e}") from e
-
-        raise LoginError(f"Login failed after {self._max_retries} attempts")
 
     async def _launch_browser(self) -> None:
         """ブラウザを起動"""
@@ -215,3 +217,7 @@ class RaprasScraper:
 
         except Exception as e:
             logger.warning(f"Error while closing browser: {e}")
+
+    async def _close_browser(self) -> None:
+        """ブラウザセッションをクリーンアップ（内部用）"""
+        await self.close()
