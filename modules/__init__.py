@@ -1,0 +1,1 @@
+"""Yahoo Auction scraper modules."""
