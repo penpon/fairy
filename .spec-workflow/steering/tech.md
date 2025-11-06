@@ -80,7 +80,28 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
      - 関連する要件番号
      - 技術的詳細
 
+     Spec: <仕様書名>
+     Task: <タスク番号>
      Related: <要件番号>
+
+     🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+     Co-Authored-By: Claude <noreply@anthropic.com>
+     ```
+   - **コミットメッセージ例**:
+     ```
+     RaprasScraperクラスの実装
+
+     Raprasサイトへの自動ログイン機能を実装:
+     - ユーザー名・パスワード認証
+     - セッション復元機能
+     - リトライロジック（指数バックオフ: 2秒, 4秒, 8秒）
+     - 30秒タイムアウト処理
+     - ログイン後のセッション自動保存
+
+     Spec: rapras-yahoo-authentication
+     Task: 4
+     Related: Requirement 1 (Rapras認証), Requirement 4 (エラーハンドリング)
 
      🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
@@ -112,7 +133,7 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
   - 言語: 日本語で記述
   - タイトル: 簡潔な変更概要（50文字以内推奨）
   - 本文: 詳細説明（箇条書き推奨）
-  - フッター: Related要件番号、Co-Authored-By
+  - フッター: Spec（仕様書名）、Task（タスク番号）、Related（要件番号）、Co-Authored-By
 
 ### Testing Strategy
 - **Unit Tests**: 個別モジュールテスト
