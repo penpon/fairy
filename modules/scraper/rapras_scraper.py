@@ -38,7 +38,9 @@ class RaprasScraper:
         self._max_retries = 3
         # 指数バックオフ：2^1=2, 2^2=4, 2^3=8秒
         self._retry_delays = [2**i for i in range(1, self._max_retries + 1)]
-        self._timeout = 30000  # 30秒（ミリ秒）  # 30秒（ミリ秒）  # 30秒（ミリ秒）  # 30秒（ミリ秒）
+        self._timeout = (
+            30000  # 30秒（ミリ秒）  # 30秒（ミリ秒）  # 30秒（ミリ秒）  # 30秒（ミリ秒）
+        )
 
     async def login(self, username: str, password: str) -> bool:
         """Raprasにログイン

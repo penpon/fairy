@@ -62,26 +62,26 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 - **Testing Framework**: pytest（実装予定）
 - **Async Testing**: pytest-asyncio（async/await関数のテスト対応）
 - **Test Coverage**: pytest-cov（カバレッジ率 80% 以上を必須維持）
-- **Security**: bandit, safety
+- **Security**: bandit（コード脆弱性検査）、pip-audit（依存関係脆弱性検査）
 - **Documentation**: Sphinx / MkDocs（計画中）
 
 ### 品質チェック手順（コード修正後は必須実行）
 
 **実行順序を厳守してください。各ステップで問題が検出された場合は、次のステップに進む前に修正が必要です。**
 
-1. **Code Formatting**: `black modules/ tests/ main.py`
+1. **Code Formatting**: `black modules/ tests/`
    - 自動フォーマット適用（エラーなし想定）
-2. **Linting & Import**: `ruff check --fix modules/ tests/ main.py`
+2. **Linting & Import**: `ruff check --fix modules/ tests/`
    - 自動修正可能な問題を修正、手動対応が必要なエラーはここで対処
 3. **Unit Testing**: `pytest tests/ -v`（または `make test`）
    - **失敗時は必ず修正**（テスト削除は禁止）
-   - **Async Tests対応**: `pytest.ini`に`asyncio_mode = auto`を設定し、pytest-asyncioプラグイン有効化
+   - **Async Tests対応**: `pyproject.toml`に`asyncio_mode = auto`を設定し、pytest-asyncioプラグイン有効化
 4. **Coverage Check**: `pytest --cov=modules --cov-report=html`
    - **カバレッジ80%以上必須**（未達時は追加テスト作成）
    - レポート: `htmlcov/index.html`
-5. **Security Scan**: `bandit -r modules/ tests/ main.py`
+5. **Security Scan**: `bandit -r modules/ tests/`
    - 重大度Highの警告は必ず対処
-6. **Dependency Audit**: `safety check --json`
+6. **Dependency Audit**: `pip-audit`
    - 脆弱性検出時は依存関係更新
 7. **Git Commit**: タスク完了ごとに関連ファイルをコミット
    - **関連ファイルごとにグループ化**: 機能単位でまとめてadd
