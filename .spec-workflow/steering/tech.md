@@ -70,12 +70,12 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
    - 脆弱性検出時は依存関係更新
 7. **Git Commit**: タスク完了ごとに関連ファイルをコミット
    - **関連ファイルごとにグループ化**: 機能単位でまとめてadd
-   - **適切なコミットメッセージ**: 変更内容、関連要件、詳細説明を含める
+   - **適切なコミットメッセージ**: 変更内容、関連要件、詳細説明を含める（日本語で記述）
    - **コミットフォーマット**:
      ```
-     <簡潔なタイトル>
+     <簡潔なタイトル（日本語）>
 
-     <詳細な説明>
+     <詳細な説明（日本語）>
      - 主要機能/変更点
      - 関連する要件番号
      - 技術的詳細
@@ -86,10 +86,27 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 
      Co-Authored-By: Claude <noreply@anthropic.com>
      ```
-   - **例**:
-     - モジュール実装時: `git add modules/scraper/rapras_scraper.py && git commit -m "..."`
-     - テスト実装時: `git add tests/test_scraper/test_rapras_scraper.py && git commit -m "..."`
-     - 統合テスト実装時: `git add tests/integration/ && git commit -m "..."`
+   - **コミットメッセージ例**:
+     ```
+     RaprasScraperクラスの実装
+
+     Raprasサイトへの自動ログイン機能を実装:
+     - ユーザー名・パスワード認証
+     - セッション復元機能
+     - リトライロジック（指数バックオフ: 2秒, 4秒, 8秒）
+     - 30秒タイムアウト処理
+     - ログイン後のセッション自動保存
+
+     Related: Requirement 1 (Rapras認証), Requirement 4 (エラーハンドリング)
+
+     🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+     Co-Authored-By: Claude <noreply@anthropic.com>
+     ```
+   - **Git操作例**:
+     - モジュール実装時: `git add modules/scraper/rapras_scraper.py && git commit -m "RaprasScraperクラスの実装..."`
+     - テスト実装時: `git add tests/test_scraper/test_rapras_scraper.py && git commit -m "RaprasScraperのユニットテスト実装..."`
+     - 統合テスト実装時: `git add tests/integration/ && git commit -m "認証フローの統合テスト実装..."`
 
 ### 品質要件（必須遵守）
 
@@ -109,6 +126,7 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
   - 品質チェック（Black, Ruff, pytest）通過後にコミット
   - コミットメッセージは詳細に記述（変更内容、要件番号、技術詳細）
 - **Commit Message Format**:
+  - 言語: 日本語で記述
   - タイトル: 簡潔な変更概要（50文字以内推奨）
   - 本文: 詳細説明（箇条書き推奨）
   - フッター: Related要件番号、Co-Authored-By
