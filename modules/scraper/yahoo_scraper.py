@@ -35,9 +35,18 @@ class YahooAuctionScraper:
 
         Args:
             session_manager: Cookie管理用のSessionManager
-            proxy_config: {"server": "...", "username": "...", "password": "..."}
+            proxy_config: {"url": "...", "username": "...", "password": "..."}（urlはプロキシサーバーのURL）
             yahoo_url: Yahoo AuctionsのURL（デフォルト: https://auctions.yahoo.co.jp/）
+
+        Raises:
+            ValueError: proxy_configに必須キーが不足している場合
         """
+        # プロキシ設定の検証
+        required_keys = {"url", "username", "password"}
+        if not all(key in proxy_config for key in required_keys):
+            missing_keys = required_keys - set(proxy_config.keys())
+            raise ValueError(f"proxy_config is missing required keys: {missing_keys}")
+
         self.session_manager = session_manager
         self.proxy_config = proxy_config
         self.yahoo_url = yahoo_url
@@ -57,7 +66,7 @@ class YahooAuctionScraper:
             phone_number: ログイン用電話番号
 
         Returns:
-            ログイン成功時True、失敗時False
+            ログイン成功時True
 
         Raises:
             ProxyAuthenticationError: プロキシ認証失敗
@@ -132,14 +141,17 @@ class YahooAuctionScraper:
                 else:
                     raise LoginError(f"Login failed after {self._max_retries} attempts: {e}") from e
 
-        raise LoginError(f"Login failed after {self._max_retries} attempts")
-
     async def _verify_proxy_connection(self) -> None:
         """プロキシ接続を検証
 
         Raises:
             ProxyAuthenticationError: プロキシ認証失敗
         """
+        temp_playwright = None
+        temp_browser = None
+        temp_context = None
+        temp_page = None
+
         try:
             # 一時的にブラウザを起動してプロキシ接続を確認
             temp_playwright = await async_playwright().start()
@@ -166,17 +178,37 @@ class YahooAuctionScraper:
                 raise ProxyAuthenticationError(
                     "Proxy authentication failed. Please check PROXY_USERNAME and PROXY_PASSWORD in .env"
                 ) from e
-            finally:
-                await temp_page.close()
-                await temp_context.close()
-                await temp_browser.close()
-                await temp_playwright.stop()
 
         except ProxyAuthenticationError:
             raise
         except Exception as e:
             logger.error(f"Unexpected error during proxy verification: {e}")
             raise ProxyAuthenticationError(f"Proxy verification failed: {e}") from e
+        finally:
+            # リソースをクリーンアップ
+            if temp_page:
+                try:
+                    await temp_page.close()
+                except Exception as e:
+                    logger.warning(f"Error closing temp page: {e}")
+
+            if temp_context:
+                try:
+                    await temp_context.close()
+                except Exception as e:
+                    logger.warning(f"Error closing temp context: {e}")
+
+            if temp_browser:
+                try:
+                    await temp_browser.close()
+                except Exception as e:
+                    logger.warning(f"Error closing temp browser: {e}")
+
+            if temp_playwright:
+                try:
+                    await temp_playwright.stop()
+                except Exception as e:
+                    logger.warning(f"Error stopping temp playwright: {e}")
 
     async def _launch_browser_with_proxy(self) -> None:
         """プロキシ設定でブラウザを起動"""
