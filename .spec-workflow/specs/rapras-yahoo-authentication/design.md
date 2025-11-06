@@ -153,7 +153,7 @@ graph TD
 
           Args:
               session_manager: Cookie管理
-              proxy_config: {"server": "...", "username": "...", "password": "..."}
+              proxy_config: {"url": "...", "username": "...", "password": "..."}
           """
 
       async def login(self, phone_number: str) -> bool:

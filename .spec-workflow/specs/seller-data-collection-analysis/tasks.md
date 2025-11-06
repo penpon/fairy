@@ -43,8 +43,6 @@
     2. Create modules/storage/models.py with Seller and Product dataclasses
     3. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 - [ ] 2. 設定ファイル作成 (constants.py)
   - File: `modules/config/constants.py`
   - Purpose: 定数定義（MAX_PRODUCTS_PER_SELLER, MIN_SELLER_PRICE等）
@@ -86,8 +84,6 @@
     2. Create modules/config/constants.py with all required constants
     3. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 - [ ] 3. 環境変数設定ファイル作成 (settings.py)
   - File: `modules/config/settings.py`
   - Purpose: .envから環境変数を読み込み（RAPRAS_PHONE）
@@ -129,8 +125,6 @@
     4. Update .gitignore to include .env
     5. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 - [ ] 4. ロガー設定作成
   - File: `modules/utils/logger.py`
   - Purpose: INFO/WARNING/ERRORレベルのログ設定
@@ -172,8 +166,6 @@
     3. Create logs/ directory structure
     4. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 ### Phase 2: Scraper Layer
 
 - [ ] 5. RaprasScraper実装
@@ -187,11 +179,11 @@
 
     Role: Python Developer specializing in web scraping and browser automation
 
-    Task: Implement RaprasScraper class following requirement 1 from .spec-workflow/specs/seller-data-collection-analysis/requirements.md. Use Playwright async API for robust web scraping with SMS authentication support.
+    Task: Implement RaprasScraper class following requirement 1 from .spec-workflow/specs/seller-data-collection-analysis/requirements.md. Use Playwright async API for robust web scraping with username/password authentication.
 
     Restrictions:
     - Must use async/await pattern
-    - Do not bypass SMS authentication (user input required)
+    - Do not bypass authentication (username/password required)
     - Handle network errors gracefully
     - Follow design.md interface specifications exactly
     - Do not hardcode selectors (use data-* attributes or stable selectors)
@@ -205,8 +197,8 @@
     - Requirement 1: Rapras集計ページからのセラーリンク取得
 
     Success:
-    - RaprasScraper class with __init__(phone_number: str)
-    - async login() method with SMS authentication flow
+    - RaprasScraper class with __init__(username: str, password: str)
+    - async login() method with username/password authentication flow
     - async fetch_seller_links(start_date, end_date, min_price) method
     - Returns list[dict] with seller_name, total_price, link
     - Filters sellers with total_price >= min_price
@@ -221,8 +213,6 @@
     4. Implement fetch_seller_links() with table scraping logic
     5. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 - [ ] 6. YahooAuctionScraper実装
   - File: `modules/scraper/yahoo_scraper.py`
   - Purpose: Yahoo Auctionsセラーページから商品名を取得
@@ -269,8 +259,6 @@
     5. Scrape product titles from seller page (max 12 items)
     6. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 ### Phase 3: Analyzer Layer
 
 - [ ] 7. AnimeFilter実装
@@ -322,8 +310,6 @@
     5. Add error handling for subprocess errors
     6. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 ### Phase 4: Storage Layer
 
 - [ ] 8. CSVExporter実装
@@ -376,8 +362,6 @@
     5. Add directory creation logic (os.makedirs)
     6. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 ### Phase 5: CLI Layer & Orchestration
 
 - [ ] 9. main.py実装 (並行処理オーケストレーション)
@@ -437,8 +421,6 @@
     6. Add success/failure summary logging
     7. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 ### Phase 6: Testing
 
 - [ ] 10. ユニットテスト作成 (models.py)
@@ -484,8 +466,6 @@
     4. Run pytest with coverage: pytest --cov=modules.storage.models
     5. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 - [ ] 11. ユニットテスト作成 (rapras_scraper.py)
   - File: `tests/test_scraper/test_rapras_scraper.py`
   - Purpose: RaprasScraperのモックテスト
@@ -535,8 +515,6 @@
     5. Run pytest with coverage: pytest --cov=modules.scraper.rapras_scraper
     6. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 - [ ] 12. ユニットテスト作成 (yahoo_scraper.py)
   - File: `tests/test_scraper/test_yahoo_scraper.py`
   - Purpose: YahooAuctionScraperのリトライロジックテスト
@@ -589,8 +567,6 @@
     6. Run pytest with coverage: pytest --cov=modules.scraper.yahoo_scraper
     7. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 - [ ] 13. ユニットテスト作成 (anime_filter.py)
   - File: `tests/test_analyzer/test_anime_filter.py`
   - Purpose: AnimeFilterのGemini CLI呼び出しテスト
@@ -642,8 +618,6 @@
     6. Run pytest with coverage: pytest --cov=modules.analyzer.anime_filter
     7. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 - [ ] 14. ユニットテスト作成 (csv_exporter.py)
   - File: `tests/test_storage/test_csv_exporter.py`
   - Purpose: CSVExporterのファイル出力テスト
@@ -696,8 +670,6 @@
     6. Run pytest with coverage: pytest --cov=modules.storage.csv_exporter
     7. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 - [ ] 15. 統合テスト作成 (E2E workflow)
   - File: `tests/integration/test_e2e_workflow.py`
   - Purpose: Rapras → Yahoo Auctions → CSV のフルフローテスト
@@ -751,8 +723,6 @@
     7. Run pytest: pytest tests/integration/ -v
     8. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 ### Phase 7: Quality & Documentation
 
 - [ ] 16. 品質チェック実行 & 修正
@@ -807,8 +777,6 @@
     7. Run safety check --json (update dependencies if needed)
     8. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 - [ ] 17. pyproject.toml & 依存関係設定
   - File: `pyproject.toml`
   - Purpose: プロジェクト設定と依存パッケージ定義
@@ -854,8 +822,6 @@
     5. Test installation: uv sync
     6. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 - [ ] 18. README.md作成
   - File: `README.md`
   - Purpose: プロジェクト概要、セットアップ手順、使用方法
@@ -908,8 +874,6 @@
     4. Add usage examples and troubleshooting
     5. After completion: Edit tasks.md and change this task status from [-] to [x]
     ```
-  - _
-
 ## Task Summary
 
 **Total Tasks**: 18

@@ -303,10 +303,15 @@ graph TD
 - **Reuses**: N/A
 
 **実装詳細**:
-- タイトル抽出: `title.split()[:2]` で先頭2単語を取得（例: "らんまちゃん らんま" → "らんまちゃん らんま"）
-- Gemini CLI実行: `subprocess.run(["gemini", "-m", "gemini-2.5-flash", "-p", f"このタイトルはアニメ作品ですか？（タイトル: {title}）"], capture_output=True, text=True)`
+- タイトル正規化: Unicode NFKC正規化、句読点削除
+- タイトル抽出: **日本語トークン化（MeCab/Janome）で先頭2トークンを抽出**
+  - 従来の `title.split()[:2]` は日本語（スペース区切りなし）では機能しない
+  - MeCab/Janomeを使用して正確な形態素解析を実施
+  - トークナイザーのインポートエラーは clear メッセージ付きでハンドル
+- Gemini CLI実行: `subprocess.run(["gemini", "-m", "gemini-2.5-flash", "-p", f"このタイトルはアニメ作品ですか？（抽出トークン: {tokenized_title}）"], capture_output=True, text=True)`
 - 判定ロジック: 出力に「はい」または「アニメ」が含まれる場合True
 - Early Termination: 1商品でもTrueなら残り商品をスキップ
+- **依存関係更新**: requirements.txtまたはpyproject.tomlでMeCab/Janomeを追加
 
 ### Component 4: CSVExporter
 
