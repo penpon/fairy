@@ -68,17 +68,50 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
    - 重大度Highの警告は必ず対処
 6. **Dependency Audit**: `safety check --json`
    - 脆弱性検出時は依存関係更新
+7. **Git Commit**: タスク完了ごとに関連ファイルをコミット
+   - **関連ファイルごとにグループ化**: 機能単位でまとめてadd
+   - **適切なコミットメッセージ**: 変更内容、関連要件、詳細説明を含める
+   - **コミットフォーマット**:
+     ```
+     <簡潔なタイトル>
+
+     <詳細な説明>
+     - 主要機能/変更点
+     - 関連する要件番号
+     - 技術的詳細
+
+     Related: <要件番号>
+
+     🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+     Co-Authored-By: Claude <noreply@anthropic.com>
+     ```
+   - **例**:
+     - モジュール実装時: `git add modules/scraper/rapras_scraper.py && git commit -m "..."`
+     - テスト実装時: `git add tests/test_scraper/test_rapras_scraper.py && git commit -m "..."`
+     - 統合テスト実装時: `git add tests/integration/ && git commit -m "..."`
 
 ### 品質要件（必須遵守）
 
 - ❌ **テスト削除禁止**: カバレッジ達成のためのテスト削除は厳禁
 - ✅ **カバレッジ80%必須**: 全コミットでこの基準を維持
-- ✅ **手順順守必須**: 上記6ステップを全て実行してからコミット
+- ✅ **手順順守必須**: 上記7ステップ(Git Commit含む)を全て実行してからタスク完了
 - ✅ **エラーゼロ**: 全チェックをパスすることが必須
+- ✅ **タスクごとにコミット**: 各タスク完了時に必ずgit commitを実行
+- ✅ **適切なグループ化**: 関連ファイルをまとめてコミット（機能単位）
 
 ### Version Control & Collaboration
 - **VCS**: Git
 - **Branching Strategy**: main ブランチのみ
+- **Commit Strategy**:
+  - タスク単位でコミット（1タスク = 1〜複数コミット）
+  - 関連ファイルをグループ化（例: モジュール実装、テスト、ドキュメント）
+  - 品質チェック（Black, Ruff, pytest）通過後にコミット
+  - コミットメッセージは詳細に記述（変更内容、要件番号、技術詳細）
+- **Commit Message Format**:
+  - タイトル: 簡潔な変更概要（50文字以内推奨）
+  - 本文: 詳細説明（箇条書き推奨）
+  - フッター: Related要件番号、Co-Authored-By
 
 ### Testing Strategy
 - **Unit Tests**: 個別モジュールテスト
