@@ -307,7 +307,16 @@ graph TD
 - タイトル抽出: **日本語トークン化（MeCab/Janome）で先頭2トークンを抽出**
   - 従来の `title.split()[:2]` は日本語（スペース区切りなし）では機能しない
   - MeCab/Janomeを使用して正確な形態素解析を実施
-  - トークナイザーのインポートエラーは clear メッセージ付きでハンドル
+  - **トークナイザーエラーハンドリング戦略**:
+    - **個別商品レベル**: トークナイザーインポートに失敗した場合、シンプルな代替トークナイザー（whitespace/char分割）にフォールバック
+      - ログレベル: WARNING
+      - ログメッセージ例: `WARNING: Tokenizer import failed for product_id=12345, tokenizer=janome, error=ModuleNotFoundError(...). Using fallback tokenizer.`
+      - 動作: その商品の処理は続行、以降の商品も処理
+    - **グローバルレベル**: 起動時にトークナイザーが一切利用できない場合、全商品に代替トークナイザーを使用
+      - ログレベル: ERROR
+      - テレメトリイベント: degraded_mode_active（機能低下モード実行）
+      - メトリクス記録: fallback_tokenizer_usage_count（使用回数カウント）
+      - 動作: パイプラインを中断しない、全商品を代替トークナイザーで処理継続
 - Gemini CLI実行: `subprocess.run(["gemini", "-m", "gemini-2.5-flash", "-p", f"このタイトルはアニメ作品ですか？（抽出トークン: {tokenized_title}）"], capture_output=True, text=True)`
 - 判定ロジック: 出力に「はい」または「アニメ」が含まれる場合True
 - Early Termination: 1商品でもTrueなら残り商品をスキップ
