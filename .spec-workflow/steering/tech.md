@@ -124,13 +124,19 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
    - 品質チェック → 修正 → コミット
 
 2. **レビュー&PR作成**（`/rabbit-rocket`）
-   - CodeRabbit CLI でコードレビュー
+   - CodeRabbit CLI でコードレビュー（ローカル）
    - 重大問題を修正（最大2回反復）
    - Push → develop へ PR作成
+   - GitHub上でCodeRabbit & Copilotが自動レビュー
+   - **自動修正機能**:
+     - レビュー変更要求 → `claude-auto-fix.yml` が自動修正
+     - テスト失敗 → `claude-test-fix.yml` が自動修正
+     - 修正後は自動コミット&Push
 
 3. **PR監視&マージ**（`/party`）
    - PR ステータス定期確認
    - CI/CD パス後に自動マージ
+   - develop ブランチ更新（git pull）
    - worktree 削除
 
 **Commit Message Format（日本語）**
