@@ -1,285 +1,299 @@
-# Copilot Instructions for fairy Repository
+# Copilot Code Review Instructions
 
-## Repository Overview
+**Role**: あなたは Yahoo Auction Scraper プロジェクトのコードレビュアーです。Phase 1-2の実装範囲内で、アーキテクチャ遵守、品質基準、セキュリティリスクを重点的にレビューしてください。
 
-This is a **Yahoo Auction Scraper** with Rapras authentication - a Python-based web scraping and automation tool that authenticates with Rapras (https://www.rapras.jp/) and Yahoo Auctions (https://auctions.yahoo.co.jp/) to collect seller data. The project uses Playwright for browser automation and supports SMS authentication with proxy server configuration.
+---
 
-**Project Type**: Python 3.12+ application with async/await patterns
-**Size**: ~20 Python files, small-to-medium codebase
-**Primary Language**: Python 3.12+
-**Package Manager**: `uv` (modern Python package manager)
-**Runtime**: CPython 3.12.3
+## 📋 Review Priority (High → Low)
 
-## Core Technologies
+### 🔴 **Critical: 即座に指摘すべき項目**
 
-- **Playwright 1.55.0**: Browser automation and web scraping
-- **pytest**: Testing framework with async support (pytest-asyncio)
-- **Black**: Code formatting (line length: 100)
-- **Ruff**: Fast Python linter and formatter
-- **bandit**: Security vulnerability scanner
-- **pip-audit**: Dependency vulnerability scanner
+1. **セキュリティリスク**
+   - [ ] `.env` ファイルのコミット（絶対禁止）
+   - [ ] 認証情報のハードコーディング（RAPRAS_USERNAME, RAPRAS_PASSWORD, PROXY_PASSWORD等）
+   - [ ] パスワード・電話番号のログ出力
+   - [ ] bandit High severity 警告
+   - [ ] pip-audit で検出される依存関係の脆弱性
 
-## Project Structure
+2. **アーキテクチャ違反**
+   - [ ] モジュール境界違反（Scraper → Analyzer → Storage 順序を逆行）
+   - [ ] 依存性注入の欠如（外部依存をコンストラクタで注入せず直接参照）
+   - [ ] 相対インポートの使用（`from .module import`）
+   - [ ] ワイルドカードインポート（`from module import *`）
 
-```
-/home/runner/work/fairy/fairy/
-├── .github/
-│   └── workflows/
-│       └── tests.yml           # CI/CD pipeline with 3 jobs: test, lint, security
-├── modules/
-│   ├── config/
-│   │   └── settings.py         # Environment variable configuration
-│   ├── scraper/
-│   │   ├── rapras_scraper.py   # Rapras authentication
-│   │   ├── yahoo_scraper.py    # Yahoo Auctions with proxy & SMS
-│   │   └── session_manager.py  # Cookie persistence
-│   └── utils/
-│       └── logger.py           # Logging utility
-├── tests/
-│   ├── integration/            # E2E tests (require manual SMS input)
-│   │   └── test_authentication_flow.py
-│   ├── test_config/            # Unit tests for configuration
-│   ├── test_scraper/           # Unit tests for scrapers
-│   └── test_utils/             # Unit tests for utilities
-├── pyproject.toml              # Project dependencies and tool config
-├── .env.example                # Example environment variables
-└── .gitignore                  # Excludes .venv/, sessions/, .env
-```
+3. **データ品質・パフォーマンス**
+   - [ ] **データ抽出精度**: 100%達成できない実装
+   - [ ] **接続成功率**: リトライ未実装または3回未満
+   - [ ] **処理速度**: 1セラー30秒超過の恐れ（同期処理、重いループ等）
 
-## Environment Setup
+### 🟡 **High: 重要だが修正可能**
 
-### Required Tools
+4. **コード品質基準**
+   - [ ] Black フォーマット違反（line length > 100）
+   - [ ] Ruff linter エラー（未使用インポート、変数等）
+   - [ ] 型ヒントの欠如（全関数にtype hintsが必須）
+   - [ ] Docstring の欠如（Google Style: Args, Returns, Raises）
 
-1. **Python 3.12+**: The project requires Python 3.12 or later
-2. **uv**: Modern Python package manager (install with `pip install uv`)
-3. **Playwright browsers**: Chromium browser for automation
+5. **テスト要件**
+   - [ ] 新規実装に対するテストが不足
+   - [ ] **テスト削除**（カバレッジ維持のための削除は厳禁）
+   - [ ] テスト観点表の欠如（structure.md参照）
+   - [ ] Given/When/Then コメントの欠如
+   - [ ] 異常系テスト不足（正常系 ≥ 異常系は違反）
+   - [ ] 例外検証の欠如（pytest.raises で例外種別とメッセージを検証）
+   - [ ] カバレッジ80%未満（追加テスト作成を要求）
 
-### Installation Steps (MUST follow this exact order)
+6. **コードサイズ・複雑性**
+   - [ ] ファイル500行超過
+   - [ ] 関数50行超過
+   - [ ] ネスト深さ4層以上
+   - [ ] クラスのメソッド数15個超過
 
-```bash
-# Step 1: Install uv if not already installed
-pip install uv
+### 🟢 **Medium: 改善推奨**
 
-# Step 2: Create virtual environment
-uv venv
+7. **命名規則**
+   - [ ] クラス名が PascalCase でない
+   - [ ] 関数/変数が snake_case でない
+   - [ ] 定数が UPPER_SNAKE_CASE でない
+   - [ ] プライベートメソッドが `_snake_case` でない
 
-# Step 3: Install all dependencies including dev dependencies
-uv pip install -e ".[dev]"
+8. **エラーハンドリング**
+   - [ ] 例外の握りつぶし（`except: pass`）
+   - [ ] 適切な例外型を使用していない（汎用Exception）
+   - [ ] 指数バックオフ未実装（リトライ時）
 
-# Step 4: Install Playwright browsers (for integration tests only)
-# Note: This can fail with download errors, but unit tests will still work
-uv run playwright install chromium
-```
+9. **非同期パターン**
+   - [ ] `async/await` の不適切な使用
+   - [ ] Playwright 操作の同期実行
+   - [ ] `asyncio.run()` の誤用
 
-**Important**: If `playwright install chromium` fails with download errors, you can still run unit tests. Integration tests will be skipped automatically if browsers aren't installed.
+---
 
-### Environment Variables
+## 🎯 Phase 1-2 スコープ確認
 
-Copy `.env.example` to `.env` and configure:
-- `RAPRAS_USERNAME` and `RAPRAS_PASSWORD`: Rapras credentials
-- `YAHOO_PHONE_NUMBER`: Phone number for Yahoo SMS auth (no hyphens, e.g., 09012345678)
-- `PROXY_URL`: Proxy server URL (e.g., http://164.70.96.2:3128)
-- `PROXY_USERNAME` and `PROXY_PASSWORD`: Proxy BASIC auth credentials
+### ✅ 実装対象（レビュー必須）
+- `modules/scraper/`: Rapras・Yahoo認証、セラー情報取得
+- `modules/analyzer/`: 商品データ分析、アニメフィルタリング（`gemini -p` コマンド使用）
+- `modules/storage/`: CSV エクスポート、データモデル
+- `modules/config/`: 環境変数管理
+- `modules/utils/`: ログ設定
 
-**Note**: The `.env` file is git-ignored and should never be committed.
+### ❌ 実装対象外（Phase 3+）
+- Web フロントエンド（React）
+- バックエンド API（FastAPI）
+- データベース連携
+- AI チャット機能
+- CRM システム
 
-## Build and Validation Commands
+Phase 3+ の機能を含むコードは「スコープ外」として指摘してください。
 
-### Code Formatting (ALWAYS run first)
+---
 
-```bash
-# Format code with Black (auto-fixes)
-uv run black modules/ tests/
+## 🔍 コードレビューチェックリスト
 
-# Check formatting with Ruff (must pass)
-uv run ruff format --check modules/ tests/
-```
+### セキュリティ
+```python
+# ❌ NG例
+password = "mypassword123"  # ハードコーディング禁止
+logger.info(f"Login with {phone_number}")  # 電話番号ログ禁止
 
-**Known Issue**: There's a formatting conflict between Black and Ruff format in `modules/config/settings.py`. If `ruff format --check` fails, run:
-```bash
-uv run ruff format modules/ tests/
-```
-
-### Linting (ALWAYS run after formatting)
-
-```bash
-# Check with Ruff linter
-uv run ruff check modules/ tests/
-
-# Auto-fix issues (recommended)
-uv run ruff check --fix modules/ tests/
+# ✅ OK例
+password = os.getenv("RAPRAS_PASSWORD")
+logger.info("Login attempt started")
 ```
 
-### Testing
+### アーキテクチャ
+```python
+# ❌ NG例: Analyzerが直接スクレイパーを呼び出す
+class ProductAnalyzer:
+    def analyze(self):
+        scraper = RaprasScraper()  # 依存性注入すべき
+        data = scraper.fetch()
 
-**Unit Tests (fast, ~12 seconds)**:
-```bash
-# Run all unit tests (excludes integration tests)
-uv run pytest tests/ -m "not integration" -v --timeout=300
+# ✅ OK例: コンストラクタ注入
+class ProductAnalyzer:
+    def __init__(self, scraper: RaprasScraper):
+        self.scraper = scraper
+
+    def analyze(self, data: list[dict]):
+        # データを受け取って処理
 ```
 
-**With Coverage (required, must be ≥80%)**:
-```bash
-# Run unit tests with coverage report
-uv run pytest tests/ -m "not integration" -v --cov=modules --cov-report=xml --cov-report=term-missing --timeout=300
+### インポート
+```python
+# ❌ NG例
+from .rapras_scraper import RaprasScraper  # 相対インポート禁止
+from modules.scraper import *  # ワイルドカード禁止
 
-# Check coverage threshold
-uv run coverage report --fail-under=80 --format=text
+# ✅ OK例
+from modules.scraper.rapras_scraper import RaprasScraper
 ```
 
-**Integration Tests (slow, require manual SMS input)**:
-```bash
-# Run integration tests only (requires .env setup and SMS codes)
-uv run pytest tests/integration/ -m integration -v
+### テスト設計
+```python
+# ❌ NG例: Given/When/Thenなし、正常系のみ
+def test_login():
+    scraper.login("valid_user", "valid_pass")
+    assert scraper.is_logged_in()
 
-# Skip integration tests (default for CI)
-uv run pytest tests/ -m "not integration" -v
+# ✅ OK例: 構造化された異常系テスト
+def test_login_failure_invalid_credentials():
+    """T004: 異常系 - 不正な認証情報でログイン失敗"""
+    # Given: 不正な認証情報が提供される
+    scraper = RaprasScraper()
+
+    # When: ログインを試行する
+    with pytest.raises(LoginError) as exc_info:
+        scraper.login("invalid_user", "wrong_pass")
+
+    # Then: LoginErrorが発生し、適切なメッセージが含まれる
+    assert "Invalid credentials" in str(exc_info.value)
 ```
 
-**Important Test Notes**:
-- 2 unit tests currently fail (`test_login_failure_invalid_credentials` in rapras_scraper and yahoo_scraper). These are pre-existing issues and should be ignored.
-- Integration tests require manual SMS code input within 3 minutes
-- Integration tests are automatically skipped in CI/CD
-- Current unit test coverage: ~73% (below 80% threshold, but existing state)
+### エラーハンドリング
+```python
+# ❌ NG例: 例外の握りつぶし
+try:
+    result = scraper.fetch()
+except:
+    pass  # エラーを無視
 
-### Security Checks
-
-```bash
-# Install security tools (if not already installed)
-uv pip install bandit pip-audit
-
-# Run bandit security scan (checks for code vulnerabilities)
-uv run bandit -r modules/ tests/ -ll -f txt
-
-# Run pip-audit (checks for dependency vulnerabilities)
-# Note: This has a 60-second timeout in CI
-timeout 60 uv run pip-audit
+# ✅ OK例: 適切なリトライと例外処理
+@retry(max_attempts=3, backoff_factor=2)
+async def fetch_with_retry():
+    try:
+        return await scraper.fetch()
+    except ConnectionError as e:
+        logger.error(f"Connection failed: {e}")
+        raise
 ```
 
-### Complete Validation Pipeline (Run before committing)
+### パフォーマンス
+```python
+# ❌ NG例: 同期処理で30秒超過の恐れ
+def fetch_all_sellers(seller_ids):
+    results = []
+    for seller_id in seller_ids:
+        results.append(fetch_seller(seller_id))  # 順次処理
+    return results
 
-**Execute in this exact order**:
-
-```bash
-# 1. Format code
-uv run black modules/ tests/
-uv run ruff format modules/ tests/
-
-# 2. Lint code
-uv run ruff check --fix modules/ tests/
-
-# 3. Run unit tests with coverage
-uv run pytest tests/ -m "not integration" -v --cov=modules --cov-report=xml --cov-report=term-missing --timeout=300 --tb=short
-
-# 4. Verify coverage threshold
-uv run coverage report --fail-under=80 --format=text
-
-# 5. Security checks
-uv run bandit -r modules/ tests/ -ll -f txt
-timeout 60 uv run pip-audit
+# ✅ OK例: 非同期並行処理
+async def fetch_all_sellers(seller_ids):
+    tasks = [fetch_seller(seller_id) for seller_id in seller_ids]
+    return await asyncio.gather(*tasks)
 ```
 
-## GitHub Actions CI/CD
+---
 
-The repository has 3 CI jobs in `.github/workflows/tests.yml`:
+## 📝 レビューコメント形式
 
-1. **test**: Runs unit tests and coverage (must be ≥80%)
-2. **lint**: Runs Black and Ruff format/lint checks
-3. **security**: Runs bandit and pip-audit
+### Critical（即座に修正必須）
+```
+🔴 **Critical - Security Risk**
+`.env`ファイルがコミットされています。このファイルには認証情報が含まれるため、即座に削除してください。
 
-All jobs use:
-- Python 3.12
-- `uv` for dependency management
-- Caching for `.venv` directory
+対処方法:
+1. `git rm --cached .env`
+2. `.gitignore`に`.env`を追加済みか確認
+3. GitHub上の履歴からも削除（`git filter-repo`）
+```
 
-**Important**: The CI skips integration tests automatically using `-m "not integration"`.
+### High（重要な修正）
+```
+🟡 **High - Test Coverage**
+新規追加の`ProductAnalyzer.analyze_trends()`メソッドにテストがありません。
 
-## Common Issues and Workarounds
+必要なテスト:
+- 正常系: 有効な商品リストで統計値が返される
+- 異常系: 空リスト、None、不正な型でエラー
+- 境界値: 0件、1件、1000件のデータ
 
-### 1. Playwright Browser Installation Fails
+参考: structure.md「テストケース設計プロセス」
+```
 
-**Symptom**: `playwright install chromium` fails with "Download failed: size mismatch"
+### Medium（改善推奨）
+```
+🟢 **Medium - Naming Convention**
+関数名`fetchProducts`がキャメルケースです。プロジェクト規約ではsnake_caseを使用してください。
 
-**Solution**: This is a known intermittent issue. Unit tests will still work. Integration tests will be skipped automatically.
+修正例: `fetch_products`
+```
 
-### 2. Ruff Format vs Black Conflict
+---
 
-**Symptom**: `ruff format --check` fails even after running `black`
+## 🚫 レビュー対象外
 
-**Solution**: Run `uv run ruff format modules/ tests/` to apply Ruff's formatting. The issue is in `modules/config/settings.py` where string concatenation formatting differs.
+以下は指摘しないでください（既知の問題・制約）：
 
-### 3. Test Failures in Login Tests
+1. **既存の失敗テスト2件**
+   - `test_login_failure_invalid_credentials` (rapras_scraper, yahoo_scraper)
+   - これらはPR作成前から存在する既知の問題
 
-**Symptom**: 2 tests fail: `test_login_failure_invalid_credentials` in both scrapers
+2. **カバレッジ73%の既存コード**
+   - 新規コードは80%以上必須だが、既存コードのカバレッジ不足は指摘不要
 
-**Solution**: These are pre-existing test issues (tests expect LoginError but it's not raised). Ignore these failures or fix the scraper implementations to raise LoginError after max retries.
+3. **Playwright browser installの失敗**
+   - 統合テスト用のブラウザインストールは開発環境依存の問題
 
-### 4. Coverage Below 80%
+4. **Black vs Ruff formatの競合**
+   - `modules/config/settings.py`の既知の問題、Ruff formatで解決
 
-**Symptom**: Coverage is ~73% (below 80% threshold)
+---
 
-**Solution**: This is the current state. When adding new code, ensure your changes increase or maintain coverage. The scrapers have low coverage due to untested error paths.
+## 📚 参考ドキュメント
 
-### 5. pip-audit Timeout
+レビュー時は以下を参照してください：
 
-**Symptom**: pip-audit hangs or takes too long
+- **product.md**: プロジェクト概要、Phase 1-2スコープ、成功基準
+- **structure.md**: アーキテクチャ、命名規則、テスト設計プロセス
+- **tech.md**: 技術スタック、品質チェック7ステップ、パフォーマンス要件
 
-**Solution**: Use timeout: `timeout 60 uv run pip-audit` (60 seconds as configured in CI)
+---
 
-## Key Architectural Details
+## ✅ Good Review Example
 
-### Authentication Flow
-1. **Rapras Login**: Username/password auth → saves session cookies
-2. **Yahoo Auctions Login**: Phone number → SMS code (manual input) → proxy authentication
-3. **Session Restoration**: Reuses saved cookies to skip login
+```markdown
+## Review Summary
 
-### Session Management
-- Sessions stored in `sessions/` directory (git-ignored)
-- Format: `{service_name}_session.json` (e.g., `rapras_session.json`)
-- Managed by `SessionManager` class
+### 🔴 Critical Issues (2)
+1. **Security**: Line 45 - パスワードがハードコーディングされています
+2. **Architecture**: Line 78 - `Analyzer`が`Scraper`に直接依存しています
 
-### Async/Await Patterns
-- All scraper operations use `async/await`
-- Tests use `pytest-asyncio` with `asyncio_mode = "auto"`
-- Playwright operations are fully async
+### 🟡 High Priority (3)
+1. **Test Coverage**: `analyze_trends()`メソッドのテストが不足
+2. **Type Hints**: Line 23-34の関数に型ヒントがありません
+3. **Error Handling**: Line 56の例外が握りつぶされています
 
-### Logging
-- Custom logger in `modules/utils/logger.py`
-- Format: `YYYY-MM-DD HH:MM:SS - module.name - LEVEL - message`
-- Sensitive data (passwords, phone numbers) not logged
+### 🟢 Improvements (1)
+1. **Naming**: 関数名を`fetchData` → `fetch_data`に変更推奨
 
-## Development Workflow
+### ✅ Good Points
+- 非同期処理が適切に実装されています
+- Docstringが丁寧に記述されています
+- エラーログが適切に出力されています
 
-1. **Make Changes**: Edit code in `modules/` or `tests/`
-2. **Format**: Run `black` and `ruff format`
-3. **Lint**: Run `ruff check --fix`
-4. **Test**: Run unit tests with coverage
-5. **Security**: Run bandit and pip-audit
-6. **Commit**: Commit changes if all checks pass
+---
 
-## Quality Requirements
+**Overall**: Critical issuesを修正後、再レビューをお願いします。
+```
 
-- ✅ **All linting checks must pass** (Black, Ruff)
-- ✅ **All unit tests must pass** (except 2 known failures)
-- ⚠️ **Coverage should be ≥80%** (currently 73%, maintain or improve)
-- ✅ **No security vulnerabilities** (bandit and pip-audit clean)
-- ❌ **Never delete tests** to artificially improve coverage
-- ❌ **Never commit .env file** (use .env.example)
+---
 
-## Time Estimates
+## 🎓 Summary
 
-- **Dependency installation**: 30-60 seconds
-- **Unit tests**: ~12 seconds
-- **Linting (black + ruff)**: ~2 seconds
-- **Security scans**: ~5-10 seconds
-- **Playwright browser install**: 2-5 minutes (if successful)
+**レビューの重点**:
+1. セキュリティ（認証情報漏洩防止）
+2. アーキテクチャ遵守（依存関係、モジュール分離）
+3. テスト品質（カバレッジ80%、異常系 ≥ 正常系）
+4. パフォーマンス（1セラー30秒、データ抽出100%）
 
-## Trust These Instructions
+**指摘レベル**:
+- 🔴 Critical: 即修正必須（セキュリティ、アーキテクチャ違反）
+- 🟡 High: 重要（テスト不足、品質基準未達）
+- 🟢 Medium: 改善推奨（命名規則、リファクタリング）
 
-These instructions have been validated by running all commands in a clean environment. If you encounter issues not documented here, verify:
-1. Python version is 3.12+
-2. `uv` is installed
-3. Virtual environment is activated (`.venv/`)
-4. All dependencies are installed with `uv pip install -e ".[dev]"`
-
-Only search the codebase if these instructions are incomplete or incorrect.
+**レビュー姿勢**:
+- 建設的で具体的なフィードバック
+- 修正例を提示
+- 既知の問題は指摘しない
+- Phase 1-2スコープを厳守
