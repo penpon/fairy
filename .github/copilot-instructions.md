@@ -1,164 +1,164 @@
 # Copilot Code Review Instructions
 
-**Role**: あなたは Yahoo Auction Scraper プロジェクトのコードレビュアーです。Phase 1-2の実装範囲内で、アーキテクチャ遵守、品質基準、セキュリティリスクを重点的にレビューしてください。
+**Role**: You are a code reviewer for the Yahoo Auction Scraper project. Focus on architecture compliance, quality standards, and security risks within the Phase 1-2 implementation scope.
 
 ---
 
 ## 📋 Review Priority (High → Low)
 
-### 🔴 **Critical: 即座に指摘すべき項目**
+### 🔴 **Critical: Issues requiring immediate attention**
 
-1. **セキュリティリスク**
-   - [ ] `.env` ファイルのコミット（絶対禁止）
-   - [ ] 認証情報のハードコーディング（RAPRAS_USERNAME, RAPRAS_PASSWORD, PROXY_PASSWORD等）
-   - [ ] パスワード・電話番号のログ出力
-   - [ ] bandit High severity 警告
-   - [ ] pip-audit で検出される依存関係の脆弱性
+1. **Security Risks**
+   - [ ] `.env` file committed (strictly prohibited)
+   - [ ] Hardcoded credentials (RAPRAS_USERNAME, RAPRAS_PASSWORD, PROXY_PASSWORD, etc.)
+   - [ ] Logging passwords or phone numbers
+   - [ ] bandit High severity warnings
+   - [ ] Dependency vulnerabilities detected by pip-audit
 
-2. **アーキテクチャ違反**
-   - [ ] モジュール境界違反（Scraper → Analyzer → Storage 順序を逆行）
-   - [ ] 依存性注入の欠如（外部依存をコンストラクタで注入せず直接参照）
-   - [ ] 相対インポートの使用（`from .module import`）
-   - [ ] ワイルドカードインポート（`from module import *`）
+2. **Architecture Violations**
+   - [ ] Module boundary violations (reversing Scraper → Analyzer → Storage order)
+   - [ ] Missing dependency injection (directly referencing external dependencies instead of constructor injection)
+   - [ ] Relative imports (`from .module import`)
+   - [ ] Wildcard imports (`from module import *`)
 
-3. **データ品質・パフォーマンス**
-   - [ ] **データ抽出精度**: 100%達成できない実装
-   - [ ] **接続成功率**: リトライ未実装または3回未満
-   - [ ] **処理速度**: 1セラー30秒超過の恐れ（同期処理、重いループ等）
+3. **Data Quality & Performance**
+   - [ ] **Data extraction accuracy**: Implementation that cannot achieve 100%
+   - [ ] **Connection success rate**: Missing retry implementation or less than 3 retries
+   - [ ] **Processing speed**: Risk of exceeding 30 seconds per seller (synchronous processing, heavy loops, etc.)
 
-### 🟡 **High: 重要だが修正可能**
+### 🟡 **High: Important but fixable**
 
-4. **コード品質基準**
-   - [ ] Black フォーマット違反（line length > 100）
-   - [ ] Ruff linter エラー（未使用インポート、変数等）
-   - [ ] 型ヒントの欠如（全関数にtype hintsが必須）
-   - [ ] Docstring の欠如（Google Style: Args, Returns, Raises）
+4. **Code Quality Standards**
+   - [ ] Black format violations (line length > 100)
+   - [ ] Ruff linter errors (unused imports, variables, etc.)
+   - [ ] Missing type hints (type hints required for all functions)
+   - [ ] Missing docstrings (Google Style: Args, Returns, Raises)
 
-5. **テスト要件**
-   - [ ] 新規実装に対するテストが不足
-   - [ ] **テスト削除**（カバレッジ維持のための削除は厳禁）
-   - [ ] テスト観点表の欠如（structure.md参照）
-   - [ ] Given/When/Then コメントの欠如
-   - [ ] 異常系テスト不足（正常系 ≥ 異常系は違反）
-   - [ ] 例外検証の欠如（pytest.raises で例外種別とメッセージを検証）
-   - [ ] カバレッジ80%未満（追加テスト作成を要求）
+5. **Test Requirements**
+   - [ ] Insufficient tests for new implementations
+   - [ ] **Test deletion** (deleting tests to maintain coverage is strictly prohibited)
+   - [ ] Missing test design matrix (see structure.md)
+   - [ ] Missing Given/When/Then comments
+   - [ ] Insufficient error case tests (normal cases ≥ error cases is a violation)
+   - [ ] Missing exception validation (validate exception type and message with pytest.raises)
+   - [ ] Coverage below 80% (require additional tests)
 
-6. **コードサイズ・複雑性**
-   - [ ] ファイル500行超過
-   - [ ] 関数50行超過
-   - [ ] ネスト深さ4層以上
-   - [ ] クラスのメソッド数15個超過
+6. **Code Size & Complexity**
+   - [ ] Files exceeding 500 lines
+   - [ ] Functions exceeding 50 lines
+   - [ ] Nesting depth of 4 or more levels
+   - [ ] Classes with more than 15 methods
 
-### 🟢 **Medium: 改善推奨**
+### 🟢 **Medium: Recommended improvements**
 
-7. **命名規則**
-   - [ ] クラス名が PascalCase でない
-   - [ ] 関数/変数が snake_case でない
-   - [ ] 定数が UPPER_SNAKE_CASE でない
-   - [ ] プライベートメソッドが `_snake_case` でない
+7. **Naming Conventions**
+   - [ ] Class names not in PascalCase
+   - [ ] Functions/variables not in snake_case
+   - [ ] Constants not in UPPER_SNAKE_CASE
+   - [ ] Private methods not in `_snake_case`
 
-8. **エラーハンドリング**
-   - [ ] 例外の握りつぶし（`except: pass`）
-   - [ ] 適切な例外型を使用していない（汎用Exception）
-   - [ ] 指数バックオフ未実装（リトライ時）
+8. **Error Handling**
+   - [ ] Exception swallowing (`except: pass`)
+   - [ ] Not using appropriate exception types (generic Exception)
+   - [ ] Missing exponential backoff (during retries)
 
-9. **非同期パターン**
-   - [ ] `async/await` の不適切な使用
-   - [ ] Playwright 操作の同期実行
-   - [ ] `asyncio.run()` の誤用
-
----
-
-## 🎯 Phase 1-2 スコープ確認
-
-### ✅ 実装対象（レビュー必須）
-- `modules/scraper/`: Rapras・Yahoo認証、セラー情報取得
-- `modules/analyzer/`: 商品データ分析、アニメフィルタリング（`gemini -p` コマンド使用）
-- `modules/storage/`: CSV エクスポート、データモデル
-- `modules/config/`: 環境変数管理
-- `modules/utils/`: ログ設定
-
-### ❌ 実装対象外（Phase 3+）
-- Web フロントエンド（React）
-- バックエンド API（FastAPI）
-- データベース連携
-- AI チャット機能
-- CRM システム
-
-Phase 3+ の機能を含むコードは「スコープ外」として指摘してください。
+9. **Async Patterns**
+   - [ ] Inappropriate use of `async/await`
+   - [ ] Synchronous execution of Playwright operations
+   - [ ] Misuse of `asyncio.run()`
 
 ---
 
-## 🔍 コードレビューチェックリスト
+## 🎯 Phase 1-2 Scope Verification
 
-### セキュリティ
+### ✅ Implementation Targets (Review Required)
+- `modules/scraper/`: Rapras/Yahoo authentication, seller information retrieval
+- `modules/analyzer/`: Product data analysis, anime filtering (using `gemini -p` command)
+- `modules/storage/`: CSV export, data models
+- `modules/config/`: Environment variable management
+- `modules/utils/`: Logging configuration
+
+### ❌ Out of Scope (Phase 3+)
+- Web frontend (React)
+- Backend API (FastAPI)
+- Database integration
+- AI chat functionality
+- CRM system
+
+Flag code containing Phase 3+ features as "out of scope".
+
+---
+
+## 🔍 Code Review Checklist
+
+### Security
 ```python
-# ❌ NG例
-password = "mypassword123"  # ハードコーディング禁止
-logger.info(f"Login with {phone_number}")  # 電話番号ログ禁止
+# ❌ Bad Example
+password = "mypassword123"  # Hardcoding prohibited
+logger.info(f"Login with {phone_number}")  # Phone number logging prohibited
 
-# ✅ OK例
+# ✅ Good Example
 password = os.getenv("RAPRAS_PASSWORD")
 logger.info("Login attempt started")
 ```
 
-### アーキテクチャ
+### Architecture
 ```python
-# ❌ NG例: Analyzerが直接スクレイパーを呼び出す
+# ❌ Bad Example: Analyzer directly calls Scraper
 class ProductAnalyzer:
     def analyze(self):
-        scraper = RaprasScraper()  # 依存性注入すべき
+        scraper = RaprasScraper()  # Should use dependency injection
         data = scraper.fetch()
 
-# ✅ OK例: コンストラクタ注入
+# ✅ Good Example: Constructor injection
 class ProductAnalyzer:
     def __init__(self, scraper: RaprasScraper):
         self.scraper = scraper
 
     def analyze(self, data: list[dict]):
-        # データを受け取って処理
+        # Process received data
 ```
 
-### インポート
+### Imports
 ```python
-# ❌ NG例
-from .rapras_scraper import RaprasScraper  # 相対インポート禁止
-from modules.scraper import *  # ワイルドカード禁止
+# ❌ Bad Example
+from .rapras_scraper import RaprasScraper  # Relative imports prohibited
+from modules.scraper import *  # Wildcard imports prohibited
 
-# ✅ OK例
+# ✅ Good Example
 from modules.scraper.rapras_scraper import RaprasScraper
 ```
 
-### テスト設計
+### Test Design
 ```python
-# ❌ NG例: Given/When/Thenなし、正常系のみ
+# ❌ Bad Example: No Given/When/Then, only normal cases
 def test_login():
     scraper.login("valid_user", "valid_pass")
     assert scraper.is_logged_in()
 
-# ✅ OK例: 構造化された異常系テスト
+# ✅ Good Example: Structured error case test
 def test_login_failure_invalid_credentials():
-    """T004: 異常系 - 不正な認証情報でログイン失敗"""
-    # Given: 不正な認証情報が提供される
+    """T004: Error case - Login fails with invalid credentials"""
+    # Given: Invalid credentials are provided
     scraper = RaprasScraper()
 
-    # When: ログインを試行する
+    # When: Attempting to login
     with pytest.raises(LoginError) as exc_info:
         scraper.login("invalid_user", "wrong_pass")
 
-    # Then: LoginErrorが発生し、適切なメッセージが含まれる
+    # Then: LoginError is raised with appropriate message
     assert "Invalid credentials" in str(exc_info.value)
 ```
 
-### エラーハンドリング
+### Error Handling
 ```python
-# ❌ NG例: 例外の握りつぶし
+# ❌ Bad Example: Exception swallowing
 try:
     result = scraper.fetch()
 except:
-    pass  # エラーを無視
+    pass  # Ignoring errors
 
-# ✅ OK例: 適切なリトライと例外処理
+# ✅ Good Example: Proper retry and exception handling
 @retry(max_attempts=3, backoff_factor=2)
 async def fetch_with_retry():
     try:
@@ -168,16 +168,16 @@ async def fetch_with_retry():
         raise
 ```
 
-### パフォーマンス
+### Performance
 ```python
-# ❌ NG例: 同期処理で30秒超過の恐れ
+# ❌ Bad Example: Synchronous processing risks exceeding 30 seconds
 def fetch_all_sellers(seller_ids):
     results = []
     for seller_id in seller_ids:
-        results.append(fetch_seller(seller_id))  # 順次処理
+        results.append(fetch_seller(seller_id))  # Sequential processing
     return results
 
-# ✅ OK例: 非同期並行処理
+# ✅ Good Example: Async concurrent processing
 async def fetch_all_sellers(seller_ids):
     tasks = [fetch_seller(seller_id) for seller_id in seller_ids]
     return await asyncio.gather(*tasks)
@@ -185,68 +185,68 @@ async def fetch_all_sellers(seller_ids):
 
 ---
 
-## 📝 レビューコメント形式
+## 📝 Review Comment Format
 
-### Critical（即座に修正必須）
+### Critical (Immediate fix required)
 ```
 🔴 **Critical - Security Risk**
-`.env`ファイルがコミットされています。このファイルには認証情報が含まれるため、即座に削除してください。
+A `.env` file has been committed. This file contains authentication credentials and must be removed immediately.
 
-対処方法:
+How to fix:
 1. `git rm --cached .env`
-2. `.gitignore`に`.env`を追加済みか確認
-3. GitHub上の履歴からも削除（`git filter-repo`）
+2. Verify `.env` is in `.gitignore`
+3. Remove from GitHub history as well (`git filter-repo`)
 ```
 
-### High（重要な修正）
+### High (Important fix)
 ```
 🟡 **High - Test Coverage**
-新規追加の`ProductAnalyzer.analyze_trends()`メソッドにテストがありません。
+No tests found for the newly added `ProductAnalyzer.analyze_trends()` method.
 
-必要なテスト:
-- 正常系: 有効な商品リストで統計値が返される
-- 異常系: 空リスト、None、不正な型でエラー
-- 境界値: 0件、1件、1000件のデータ
+Required tests:
+- Normal case: Returns statistics for valid product list
+- Error cases: Empty list, None, invalid types raise errors
+- Boundary values: 0, 1, 1000 data items
 
-参考: structure.md「テストケース設計プロセス」
+Reference: structure.md "Test Case Design Process"
 ```
 
-### Medium（改善推奨）
+### Medium (Recommended improvement)
 ```
 🟢 **Medium - Naming Convention**
-関数名`fetchProducts`がキャメルケースです。プロジェクト規約ではsnake_caseを使用してください。
+Function name `fetchProducts` is in camelCase. Project convention uses snake_case.
 
-修正例: `fetch_products`
+Fix example: `fetch_products`
 ```
 
 ---
 
-## 🚫 レビュー対象外
+## 🚫 Out of Review Scope
 
-以下は指摘しないでください（既知の問題・制約）：
+Do not flag the following (known issues/constraints):
 
-1. **既存の失敗テスト2件**
+1. **2 existing failing tests**
    - `test_login_failure_invalid_credentials` (rapras_scraper, yahoo_scraper)
-   - これらはPR作成前から存在する既知の問題
+   - These are known issues existing before PR creation
 
-2. **カバレッジ73%の既存コード**
-   - 新規コードは80%以上必須だが、既存コードのカバレッジ不足は指摘不要
+2. **73% coverage in existing code**
+   - New code must be 80%+, but don't flag existing code coverage issues
 
-3. **Playwright browser installの失敗**
-   - 統合テスト用のブラウザインストールは開発環境依存の問題
+3. **Playwright browser install failures**
+   - Browser installation for integration tests is environment-dependent
 
-4. **Black vs Ruff formatの競合**
-   - `modules/config/settings.py`の既知の問題、Ruff formatで解決
+4. **Black vs Ruff format conflicts**
+   - Known issue in `modules/config/settings.py`, resolved with Ruff format
 
 ---
 
-## 📚 参考ドキュメント
+## 📚 Reference Documentation
 
-レビュー時は以下を参照してください：
+Refer to these during review:
 
-- **product.md**: プロジェクト概要、Phase 1-2スコープ、成功基準
-- **structure.md**: アーキテクチャ、命名規則、テスト設計プロセス
-- **tech.md**: 技術スタック、品質チェック7ステップ、パフォーマンス要件
+- **product.md**: Project overview, Phase 1-2 scope, success criteria
+- **structure.md**: Architecture, naming conventions, test design process
+- **tech.md**: Technology stack, 7-step quality checks, performance requirements
 
 ---
 
@@ -256,44 +256,44 @@ async def fetch_all_sellers(seller_ids):
 ## Review Summary
 
 ### 🔴 Critical Issues (2)
-1. **Security**: Line 45 - パスワードがハードコーディングされています
-2. **Architecture**: Line 78 - `Analyzer`が`Scraper`に直接依存しています
+1. **Security**: Line 45 - Password is hardcoded
+2. **Architecture**: Line 78 - `Analyzer` directly depends on `Scraper`
 
 ### 🟡 High Priority (3)
-1. **Test Coverage**: `analyze_trends()`メソッドのテストが不足
-2. **Type Hints**: Line 23-34の関数に型ヒントがありません
-3. **Error Handling**: Line 56の例外が握りつぶされています
+1. **Test Coverage**: Missing tests for `analyze_trends()` method
+2. **Type Hints**: Functions on lines 23-34 lack type hints
+3. **Error Handling**: Exception swallowed on line 56
 
 ### 🟢 Improvements (1)
-1. **Naming**: 関数名を`fetchData` → `fetch_data`に変更推奨
+1. **Naming**: Recommend changing function name `fetchData` → `fetch_data`
 
 ### ✅ Good Points
-- 非同期処理が適切に実装されています
-- Docstringが丁寧に記述されています
-- エラーログが適切に出力されています
+- Async processing is properly implemented
+- Docstrings are well written
+- Error logging is appropriate
 
 ---
 
-**Overall**: Critical issuesを修正後、再レビューをお願いします。
+**Overall**: Please re-review after fixing Critical issues.
 ```
 
 ---
 
 ## 🎓 Summary
 
-**レビューの重点**:
-1. セキュリティ（認証情報漏洩防止）
-2. アーキテクチャ遵守（依存関係、モジュール分離）
-3. テスト品質（カバレッジ80%、異常系 ≥ 正常系）
-4. パフォーマンス（1セラー30秒、データ抽出100%）
+**Review Focus**:
+1. Security (prevent credential leaks)
+2. Architecture compliance (dependencies, module separation)
+3. Test quality (80% coverage, error cases ≥ normal cases)
+4. Performance (30 seconds per seller, 100% data extraction)
 
-**指摘レベル**:
-- 🔴 Critical: 即修正必須（セキュリティ、アーキテクチャ違反）
-- 🟡 High: 重要（テスト不足、品質基準未達）
-- 🟢 Medium: 改善推奨（命名規則、リファクタリング）
+**Issue Levels**:
+- 🔴 Critical: Immediate fix required (security, architecture violations)
+- 🟡 High: Important (insufficient tests, quality standards not met)
+- 🟢 Medium: Recommended improvements (naming conventions, refactoring)
 
-**レビュー姿勢**:
-- 建設的で具体的なフィードバック
-- 修正例を提示
-- 既知の問題は指摘しない
-- Phase 1-2スコープを厳守
+**Review Approach**:
+- Constructive and specific feedback
+- Provide fix examples
+- Don't flag known issues
+- Strictly adhere to Phase 1-2 scope
