@@ -28,6 +28,7 @@ env/
 
 # Testing
 .coverage
+coverage.json
 .pytest_cache/
 htmlcov/
 .tox/
@@ -58,3 +59,4 @@ Thumbs.db
 .spec-workflow/archive/
 .spec-workflow/approvals/
 .spec-workflow/user-templates/
+.spec-workflow/templates/
