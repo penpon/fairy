@@ -1,0 +1,14 @@
+# Spec Workflow MCP Server Configuration File
+# ============================================
+
+# プロジェクトディレクトリ
+projectDir = "."
+
+# ダッシュボードを自動起動
+autoStartDashboard = true
+
+# ポート番号
+port = 3000
+
+# 言語設定(日本語)
+lang = "ja"

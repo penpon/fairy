@@ -65,63 +65,83 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 - **Security**: bandit（コード脆弱性検査）、pip-audit（依存関係脆弱性検査）
 - **Documentation**: Sphinx / MkDocs（計画中）
 
-### 品質チェック手順（コード修正後は必須実行）
+### 開発手法: TDD (Test-Driven Development)
 
-**実行順序を厳守してください。各ステップで問題が検出された場合は、次のステップに進む前に修正が必要です。**
+**Red-Green-Refactor サイクルを厳守**
+
+1. **Red**: 失敗するテストを先に書く
+2. **Green**: 最小限のコードでテストを通す
+3. **Refactor**: コードを整理・最適化
+
+**テストコード修正禁止原則**
+
+基本原則: テストコードの修正は禁止（テストは仕様を表す）
+
+- テスト失敗 → 実装側を修正
+- テストが間違っている → 作業停止してユーザーに確認
+
+例外ケース:
+- テスト追加・修正タスクを依頼された場合
+- 構文エラー、仕様矛盾、API互換性問題がある場合
+- ※例外ケースでも必ずユーザーに確認
+
+**テストデータ依存禁止原則**
+
+実装コードは、テストで使用される特定データ値（変数名、テーブル名等）への特別処理を禁止
+
+問題点:
+- 脆弱なテスト: テストデータ変更で実装が機能しなくなる
+- 隠蔽された仕様: 特定データ名への特別処理が暗黙的になる
+- 汎用性の欠如: 実運用環境で機能しない可能性
+
+### 品質チェック手順（コミット前に必須実行）
 
 1. **Code Formatting**: `black modules/ tests/`
-   - 自動フォーマット適用（エラーなし想定）
 2. **Linting & Import**: `ruff check --fix modules/ tests/`
-   - 自動修正可能な問題を修正、手動対応が必要なエラーはここで対処
-3. **Unit Testing**: `pytest tests/ -v`（または `make test`）
-   - **失敗時は必ず修正**（テスト削除は禁止）
-   - **Async Tests対応**: `pyproject.toml`に`asyncio_mode = auto`を設定し、pytest-asyncioプラグイン有効化
-4. **Coverage Check**: `pytest --cov=modules --cov-report=html`
-   - **カバレッジ80%以上必須**（未達時は追加テスト作成）
-   - レポート: `htmlcov/index.html`
-5. **Security Scan**: `bandit -r modules/ tests/`
-   - 重大度Highの警告は必ず対処
+3. **Unit Testing**: `pytest tests/ -v`（失敗時は必ず修正、テスト削除禁止）
+4. **Coverage Check**: `pytest --cov=modules --cov-report=html`（80%以上必須）
+5. **Security Scan**: `bandit -r modules/ tests/`（High警告は必ず対処）
 6. **Dependency Audit**: `pip-audit`
-   - 脆弱性検出時は依存関係更新
-7. **Git Commit**: タスク完了ごとに関連ファイルをコミット
-   - **関連ファイルごとにグループ化**: 機能単位でまとめてadd
-   - **適切なコミットメッセージ**: 変更内容、関連要件、詳細説明を含める（日本語で記述）
-   - **コミットフォーマット**:
-     ```
-     <簡潔なタイトル（日本語）>
-
-     <詳細な説明（日本語）>
-     - 主要機能/変更点
-     - 関連する要件番号
-     - 技術的詳細
-
-     Spec: <仕様書名>
-     Task: <タスク番号>
-     Related: <要件番号>
-     ```
 
 ### 品質要件（必須遵守）
 
-- ❌ **テスト削除禁止**: カバレッジ達成のためのテスト削除は厳禁
-- ✅ **カバレッジ80%必須**: 全コミットでこの基準を維持
-- ✅ **手順順守必須**: 上記7ステップ(Git Commit含む)を全て実行してからタスク完了
-- ✅ **エラーゼロ**: 全チェックをパスすることが必須
-- ✅ **タスクごとにコミット**: 各タスク完了時に必ずgit commitを実行
-- ✅ **適切なグループ化**: 関連ファイルをまとめてコミット（機能単位）
+- ❌ **テスト削除禁止**
+- ✅ **カバレッジ80%必須**
+- ✅ **全チェックパス後にコミット**
 
 ### Version Control & Collaboration
-- **VCS**: Git
-- **Branching Strategy**: main ブランチのみ
-- **Commit Strategy**:
-  - タスク単位でコミット（1タスク = 1〜複数コミット）
-  - 関連ファイルをグループ化（例: モジュール実装、テスト、ドキュメント）
-  - 品質チェック（Black, Ruff, pytest）通過後にコミット
-  - コミットメッセージは詳細に記述（変更内容、要件番号、技術詳細）
-- **Commit Message Format**:
-  - 言語: 日本語で記述
-  - タイトル: 簡潔な変更概要（50文字以内推奨）
-  - 本文: 詳細説明（箇条書き推奨）
-  - フッター: Spec（仕様書名）、Task（タスク番号）、Related（要件番号）、Co-Authored-By
+
+**Branching Strategy（Git Worktree使用）**
+- **main**: 安定版（手動マージのみ）
+- **develop**: 開発統合ブランチ
+- **feature/***: 機能実装ブランチ（git worktreeで分離）
+
+**Development Workflow（tmux並列実行推奨）**
+
+1. **実装フェーズ（feature/* ブランチ）**
+   - git worktree で feature ブランチ作成
+   - TDD サイクル実行（Red → Green → Refactor）
+   - 品質チェック → 修正 → コミット
+
+2. **レビュー&PR作成**（`/rabbit-rocket`）
+   - CodeRabbit CLI でコードレビュー
+   - 重大問題を修正（最大2回反復）
+   - Push → develop へ PR作成
+
+3. **PR監視&マージ**（`/party`）
+   - PR ステータス定期確認
+   - CI/CD パス後に自動マージ
+   - worktree 削除
+
+**Commit Message Format（日本語）**
+```
+<簡潔なタイトル>
+
+<詳細説明（箇条書き）>
+
+Spec: <仕様書名>
+Task: <タスク番号>
+```
 
 ### Testing Strategy
 - **Unit Tests**: 個別モジュールテスト
