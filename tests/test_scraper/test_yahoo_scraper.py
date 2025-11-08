@@ -208,3 +208,158 @@ class TestYahooAuctionScraper:
         """正常系: タイムアウトが30秒に設定されることを確認"""
         # Then: タイムアウトが30000ms（30秒）
         assert yahoo_scraper._timeout == 30000
+
+    @pytest.mark.asyncio
+    async def test_invalid_proxy_config_missing_keys(self, session_manager):
+        """異常系: プロキシ設定に必須キーが不足している場合"""
+        # Given: 不完全なプロキシ設定
+        invalid_proxy_config = {"url": "http://proxy.com"}
+
+        # When/Then: ValueErrorが発生
+        with pytest.raises(ValueError) as exc_info:
+            YahooAuctionScraper(session_manager=session_manager, proxy_config=invalid_proxy_config)
+
+        assert "missing required keys" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_login_with_session_restoration(self, yahoo_scraper, mock_playwright):
+        """正常系: セッション復元が成功した場合のログイン"""
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()
+
+        yahoo_scraper.session_manager.save_session(
+            "yahoo", [{"name": "session", "value": "existing123", "domain": ".yahoo.co.jp"}]
+        )
+
+        with (
+            patch(
+                "modules.scraper.yahoo_scraper.async_playwright",
+                return_value=mock_playwright["async_pw_instance"],
+            ),
+            patch.object(yahoo_scraper, "_verify_proxy_connection", return_value=None),
+        ):
+            result = await yahoo_scraper.login("09012345678")
+            assert result is True
+
+        await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_login_with_failed_session_restoration(self, yahoo_scraper, mock_playwright):
+        """正常系: セッション復元が失敗した場合は通常ログイン"""
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.side_effect = [None, MagicMock(), MagicMock()]
+
+        yahoo_scraper.session_manager.save_session(
+            "yahoo", [{"name": "session", "value": "expired123", "domain": ".yahoo.co.jp"}]
+        )
+
+        with (
+            patch(
+                "modules.scraper.yahoo_scraper.async_playwright",
+                return_value=mock_playwright["async_pw_instance"],
+            ),
+            patch.object(yahoo_scraper, "_prompt_for_sms_code", return_value="123456"),
+            patch.object(yahoo_scraper, "_verify_proxy_connection", return_value=None),
+        ):
+            result = await yahoo_scraper.login("09012345678")
+            assert result is True
+
+        await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_login_timeout_error(self, yahoo_scraper, mock_playwright):
+        """異常系: タイムアウトが発生した場合"""
+        mock_page = mock_playwright["page"]
+        mock_page.goto.side_effect = TimeoutError("Navigation timeout")
+
+        with (
+            patch(
+                "modules.scraper.yahoo_scraper.async_playwright",
+                return_value=mock_playwright["async_pw_instance"],
+            ),
+            patch.object(yahoo_scraper, "_verify_proxy_connection", return_value=None),
+        ):
+            with pytest.raises(TimeoutError) as exc_info:
+                await yahoo_scraper.login("09012345678")
+
+            assert "Login timed out after" in str(exc_info.value)
+
+        await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_login_unexpected_error(self, yahoo_scraper, mock_playwright):
+        """異常系: 予期しないエラーが発生した場合"""
+        mock_page = mock_playwright["page"]
+        mock_page.goto.side_effect = RuntimeError("Unexpected error")
+
+        with (
+            patch(
+                "modules.scraper.yahoo_scraper.async_playwright",
+                return_value=mock_playwright["async_pw_instance"],
+            ),
+            patch.object(yahoo_scraper, "_verify_proxy_connection", return_value=None),
+        ):
+            with pytest.raises(LoginError) as exc_info:
+                await yahoo_scraper.login("09012345678")
+
+            assert "Login failed after" in str(exc_info.value)
+
+        await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_is_logged_in_without_page(self, yahoo_scraper):
+        """異常系: ページが存在しない場合はログイン状態チェックがFalse"""
+        assert yahoo_scraper.page is None
+        result = await yahoo_scraper.is_logged_in()
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_is_logged_in_with_error(self, yahoo_scraper, mock_playwright):
+        """異常系: is_logged_in()でエラーが発生した場合"""
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await yahoo_scraper._launch_browser_with_proxy()
+            yahoo_scraper.page.query_selector.side_effect = RuntimeError("Query error")
+
+            result = await yahoo_scraper.is_logged_in()
+            assert result is False
+
+        await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_close_with_error(self, yahoo_scraper, mock_playwright):
+        """異常系: close()でエラーが発生しても例外を発生させない"""
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await yahoo_scraper._launch_browser_with_proxy()
+            yahoo_scraper.page.close.side_effect = RuntimeError("Close error")
+
+            # エラーを発生させずに正常終了することを確認
+            await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_verify_proxy_connection_success(self, yahoo_scraper, mock_playwright):
+        """正常系: プロキシ接続の検証が成功する"""
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            # プロキシ検証が成功（例外が発生しない）
+            await yahoo_scraper._verify_proxy_connection()
+
+    @pytest.mark.asyncio
+    async def test_verify_proxy_connection_failure(self, yahoo_scraper, mock_playwright):
+        """異常系: プロキシ接続の検証が失敗する"""
+        mock_page = mock_playwright["page"]
+        mock_page.goto.side_effect = RuntimeError("Proxy connection failed")
+
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            with pytest.raises(ProxyAuthenticationError):
+                await yahoo_scraper._verify_proxy_connection()

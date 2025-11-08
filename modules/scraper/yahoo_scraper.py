@@ -141,6 +141,11 @@ class YahooAuctionScraper:
                 else:
                     raise LoginError(f"Login failed after {self._max_retries} attempts: {e}") from e
 
+        # forループを抜けた = 3回すべて失敗した
+        raise LoginError(
+            f"Login failed after {self._max_retries} attempts: Invalid credentials or login process failed"
+        )
+
     async def _verify_proxy_connection(self) -> None:
         """プロキシ接続を検証
 

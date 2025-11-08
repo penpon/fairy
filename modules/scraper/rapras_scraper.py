@@ -112,6 +112,11 @@ class RaprasScraper:
                 else:
                     raise LoginError(f"Login failed after {self._max_retries} attempts: {e}") from e
 
+        # forループを抜けた = 3回すべて失敗した
+        raise LoginError(
+            f"Login failed after {self._max_retries} attempts: Invalid credentials or login process failed"
+        )
+
     async def _launch_browser(self) -> None:
         """ブラウザを起動"""
         if not self.playwright:
