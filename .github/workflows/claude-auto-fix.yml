@@ -1,0 +1,58 @@
+name: Claude Auto-fix from Reviews
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  auto-fix:
+    # Only run when Copilot or CodeRabbit submits a review with change requests
+    if: |
+      (github.event.review.user.login == 'copilot[bot]' ||
+       github.event.review.user.login == 'coderabbitai[bot]') &&
+      github.event.review.state == 'changes_requested'
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Claude Code to fix issues
+        id: claude-fix
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            REVIEWER: ${{ github.event.review.user.login }}
+
+            ${{ github.event.review.user.login }}がこのPRにレビューを投稿しました。
+
+            レビュー内容:
+            ${{ github.event.review.body }}
+
+            以下の手順で対応してください:
+            1. `gh pr view ${{ github.event.pull_request.number }} --comments`でレビューコメントの詳細を取得
+            2. 指摘された問題点を分析
+            3. 重大な問題（critical, high severity）から優先的に修正
+            4. コードを修正
+            5. 修正内容をコミット（メッセージ: "fix: ${{ github.event.review.user.login }}のレビュー指摘事項を修正"）
+            6. プッシュ
+
+            注意事項:
+            - CLAUDE.mdの規約に従ってコード修正を行うこと
+            - 軽微な指摘（style, formatting）は無視してよい
+            - テストが失敗しないよう慎重に修正すること
+
+          claude_args: '--allowed-tools "Bash(gh pr:*),Bash(git:*)"'

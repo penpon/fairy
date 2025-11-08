@@ -1,4 +1,7 @@
-name: Claude Code
+name: Claude Code - Interactive Assistant
+
+# 対話型アシスタント: @claudeメンションで自由にタスクを依頼できます
+# 自動レビュー修正はclaude-auto-fix.ymlで処理されます
 
 on:
   issue_comment:
