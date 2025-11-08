@@ -52,3 +52,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Spec Workflow
+.spec-workflow/_archived/
+.spec-workflow/archive/
+.spec-workflow/approvals/
+.spec-workflow/user-templates/
