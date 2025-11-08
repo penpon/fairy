@@ -42,12 +42,12 @@ def load_rapras_config() -> RaprasConfig:
 
     if not username:
         raise ValueError(
-            "RAPRAS_USERNAME environment variable is not set. " "Please set it in your .env file."
+            "RAPRAS_USERNAME environment variable is not set. Please set it in your .env file."
         )
 
     if not password:
         raise ValueError(
-            "RAPRAS_PASSWORD environment variable is not set. " "Please set it in your .env file."
+            "RAPRAS_PASSWORD environment variable is not set. Please set it in your .env file."
         )
 
     return RaprasConfig(username=username, password=password)
@@ -66,8 +66,7 @@ def load_yahoo_config() -> YahooConfig:
 
     if not phone_number:
         raise ValueError(
-            "YAHOO_PHONE_NUMBER environment variable is not set. "
-            "Please set it in your .env file."
+            "YAHOO_PHONE_NUMBER environment variable is not set. Please set it in your .env file."
         )
 
     return YahooConfig(phone_number=phone_number)
@@ -88,17 +87,17 @@ def load_proxy_config() -> ProxyConfig:
 
     if not url:
         raise ValueError(
-            "PROXY_URL environment variable is not set. " "Please set it in your .env file."
+            "PROXY_URL environment variable is not set. Please set it in your .env file."
         )
 
     if not username:
         raise ValueError(
-            "PROXY_USERNAME environment variable is not set. " "Please set it in your .env file."
+            "PROXY_USERNAME environment variable is not set. Please set it in your .env file."
         )
 
     if not password:
         raise ValueError(
-            "PROXY_PASSWORD environment variable is not set. " "Please set it in your .env file."
+            "PROXY_PASSWORD environment variable is not set. Please set it in your .env file."
         )
 
     return ProxyConfig(url=url, username=username, password=password)
