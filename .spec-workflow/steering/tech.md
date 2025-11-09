@@ -59,55 +59,17 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 ### Code Quality Tools
 - **Formatting**: Black（自動フォーマット）
 - **Linting & Import Management**: Ruff（スタイルチェック、import 整理含む）
-- **Testing Framework**: pytest（実装予定）
+- **Testing Framework**: pytest
 - **Async Testing**: pytest-asyncio（async/await関数のテスト対応）
 - **Test Coverage**: pytest-cov（カバレッジ率 80% 以上を必須維持）
 - **Security**: bandit（コード脆弱性検査）、pip-audit（依存関係脆弱性検査）
 - **Documentation**: Sphinx / MkDocs（計画中）
 
-### 開発手法: TDD (Test-Driven Development)
+### 開発手法
 
-**Red-Green-Refactor サイクルを厳守**
+**TDD (Test-Driven Development)**: `/tdd-cycle` コマンドでRed-Green-Refactorサイクルを実行
 
-1. **Red**: 失敗するテストを先に書く
-2. **Green**: 最小限のコードでテストを通す
-3. **Refactor**: コードを整理・最適化
-
-**テストコード修正禁止原則**
-
-基本原則: テストコードの修正は禁止（テストは仕様を表す）
-
-- テスト失敗 → 実装側を修正
-- テストが間違っている → 作業停止してユーザーに確認
-
-例外ケース:
-- テスト追加・修正タスクを依頼された場合
-- 構文エラー、仕様矛盾、API互換性問題がある場合
-- ※例外ケースでも必ずユーザーに確認
-
-**テストデータ依存禁止原則**
-
-実装コードは、テストで使用される特定データ値（変数名、テーブル名等）への特別処理を禁止
-
-問題点:
-- 脆弱なテスト: テストデータ変更で実装が機能しなくなる
-- 隠蔽された仕様: 特定データ名への特別処理が暗黙的になる
-- 汎用性の欠如: 実運用環境で機能しない可能性
-
-### 品質チェック手順（コミット前に必須実行）
-
-1. **Code Formatting**: `black modules/ tests/`
-2. **Linting & Import**: `ruff check --fix modules/ tests/`
-3. **Unit Testing**: `pytest tests/ -v`（失敗時は必ず修正、テスト削除禁止）
-4. **Coverage Check**: `pytest --cov=modules --cov-report=html`（80%以上必須）
-5. **Security Scan**: `bandit -r modules/ tests/`（High警告は必ず対処）
-6. **Dependency Audit**: `pip-audit`
-
-### 品質要件（必須遵守）
-
-- ❌ **テスト削除禁止**
-- ✅ **カバレッジ80%必須**
-- ✅ **全チェックパス後にコミット**
+**品質管理**: `/quality-check` コマンドでコミット前チェック（カバレッジ80%必須）
 
 ### Version Control & Collaboration
 
@@ -120,8 +82,9 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 
 1. **実装フェーズ（feature/* ブランチ）**
    - git worktree で feature ブランチ作成
-   - TDD サイクル実行（Red → Green → Refactor）
-   - 品質チェック → 修正 → コミット
+   - `/tdd-cycle` でTDD実装（Red → Green → Refactor → QC → Log → Commit）
+     - TDDサイクルが強制され、確実にテストファーストで実装
+     - 品質チェック（`/quality-check`）が自動実行される
 
 2. **レビュー&PR作成**（`/rabbit-rocket`）
    - CodeRabbit CLI でコードレビュー（ローカル）
@@ -138,6 +101,17 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
    - CI/CD パス後に自動マージ
    - develop ブランチ更新（git pull）
    - worktree 削除
+
+**ワークフロー チェックリスト（参考）**
+
+タスク実装サイクル:
+- [ ] 1. git worktree でfeatureブランチ作成
+- [ ] 2. `/tdd-cycle` でTDD実装
+- [ ] 3. `/rabbit-rocket` でレビュー&PR作成
+- [ ] 4. GitHub自動レビュー（CodeRabbit/Copilot）
+- [ ] 5. GitHub自動修正（必要時）
+- [ ] 6. `/party` でPR監視&マージ
+- [ ] 7. 全タスク完了後、developをmainにマージ（手動）
 
 **Commit Message Format（日本語）**
 ```
@@ -163,7 +137,6 @@ Task: <タスク番号>
 
 ### Quality & Reliability
 - **Test Coverage**: 80% 以上を必須維持
-- **Parallel Processing**: 複数セラー並行処理（計画中 — 現状未実装、将来実装予定）
 
 ### Security
 - **Authentication**: SMS 認証対応
@@ -171,4 +144,8 @@ Task: <タスク番号>
 
 ## Phase 3+（詳細は実装時に決定）
 
-データベース連携、AI チャット、Web ダッシュボード等の拡張を計画中。
+以下の拡張機能を計画中：
+- データベース連携
+- AI チャット
+- Web ダッシュボード
+- **Parallel Processing**: 複数セラー並行処理
