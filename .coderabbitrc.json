@@ -1,9 +1,11 @@
 {
+  "language": "ja-JP",
   "reviews": {
     "enabled": true,
     "request_changes": true,
     "auto_review": true,
     "auto_fix": true,
+    "profile": "chill",
     "exclude_patterns": [
       ".spec-workflow/**",
       "*.md",
