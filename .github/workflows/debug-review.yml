@@ -1,0 +1,26 @@
+name: Debug Review Event
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump GitHub event
+        run: |
+          echo "=== Event Name ==="
+          echo "${{ github.event_name }}"
+
+          echo "=== Review User Login ==="
+          echo "${{ github.event.review.user.login }}"
+
+          echo "=== Review User Type ==="
+          echo "${{ github.event.review.user.type }}"
+
+          echo "=== Review State ==="
+          echo "${{ github.event.review.state }}"
+
+          echo "=== Full Event JSON ==="
+          echo '${{ toJSON(github.event) }}' | jq '.'
