@@ -33,7 +33,7 @@ jobs:
 
     - name: 依存関係のインストール
       run: |
-        uv pip install -e ".[dev]"
+        uv sync --extra dev
 
     - name: Playwright ブラウザのインストール
       run: |
@@ -99,7 +99,7 @@ jobs:
 
     - name: 依存関係のインストール
       run: |
-        uv pip install -e ".[dev]"
+        uv sync --extra dev
 
     - name: 静的解析とフォーマットチェック
       run: |
@@ -137,7 +137,7 @@ jobs:
 
     - name: 依存関係のインストール
       run: |
-        uv pip install -e ".[dev]"
+        uv sync --extra dev
 
     - name: セキュリティツールのインストール
       run: |
