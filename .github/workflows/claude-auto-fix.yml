@@ -9,7 +9,7 @@ jobs:
     # Only run when Copilot or CodeRabbit submits a review
     # Trigger on any review comment from these bots (not just changes_requested)
     if: |
-      github.event.review.user.login == 'copilot[bot]' ||
+      github.event.review.user.login == 'Copilot' ||
       github.event.review.user.login == 'coderabbitai[bot]'
 
     runs-on: ubuntu-latest
