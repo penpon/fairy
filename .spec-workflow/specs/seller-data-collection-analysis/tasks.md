@@ -427,7 +427,7 @@
   - File: `tests/test_storage/test_models.py`
   - Purpose: Seller/Productデータクラスのテスト
   - _Leverage: pytest, modules.storage.models_
-  - _Requirements: Non-Functional Requirements (Testability - 80% coverage)_
+  - _Requirements: Non-Functional Requirements (Testability - 95% coverage)_
   - _Prompt:
     ```
     Implement the task for spec seller-data-collection-analysis, first run spec-workflow-guide to get the workflow guide then implement the task:
@@ -448,7 +448,7 @@
     - modules.storage.models (Seller, Product)
 
     Requirements:
-    - Non-Functional Requirements: Testability (80% coverage)
+    - Non-Functional Requirements: Testability (95% coverage)
 
     Success:
     - Test normal instantiation of Seller and Product
@@ -494,7 +494,7 @@
 
     Requirements:
     - Requirement 1: Rapras集計ページからのセラーリンク取得
-    - Non-Functional Requirements: Testability (80% coverage)
+    - Non-Functional Requirements: Testability (95% coverage)
 
     Success:
     - Test successful login flow
@@ -505,7 +505,7 @@
     - Test boundary: total_price exactly 100000
     - All Playwright calls mocked
     - All tests use Given/When/Then comments
-    - pytest passes with 80%+ coverage for rapras_scraper.py
+    - pytest passes with 95%+ coverage for rapras_scraper.py
 
     Instructions:
     1. Before starting: Edit tasks.md and change this task status from [ ] to [-]
@@ -556,7 +556,7 @@
     - Test proxy configuration
     - All Playwright calls mocked
     - All tests use Given/When/Then comments
-    - pytest passes with 80%+ coverage for yahoo_scraper.py
+    - pytest passes with 95%+ coverage for yahoo_scraper.py
 
     Instructions:
     1. Before starting: Edit tasks.md and change this task status from [ ] to [-]
@@ -594,7 +594,7 @@
 
     Requirements:
     - Requirement 4: アニメタイトル判定による二次創作セラー特定
-    - Non-Functional Requirements: Testability (80% coverage)
+    - Non-Functional Requirements: Testability (95% coverage)
 
     Success:
     - Test is_anime_title() returns True for "はい" response
@@ -607,7 +607,7 @@
     - Test empty title / 1-word title boundary cases
     - All subprocess calls mocked
     - All tests use Given/When/Then comments
-    - pytest passes with 80%+ coverage for anime_filter.py
+    - pytest passes with 95%+ coverage for anime_filter.py
 
     Instructions:
     1. Before starting: Edit tasks.md and change this task status from [ ] to [-]
@@ -647,7 +647,7 @@
     Requirements:
     - Requirement 3: 中間CSVエクスポート
     - Requirement 4: アニメタイトル判定による二次創作セラー特定
-    - Non-Functional Requirements: Testability (80% coverage)
+    - Non-Functional Requirements: Testability (95% coverage)
 
     Success:
     - Test export_intermediate_csv() with "未判定" for is_anime_seller
@@ -659,7 +659,7 @@
     - Test IOError handling (write permission failure)
     - Test empty seller list
     - All tests use Given/When/Then comments
-    - pytest passes with 80%+ coverage for csv_exporter.py
+    - pytest passes with 95%+ coverage for csv_exporter.py
 
     Instructions:
     1. Before starting: Edit tasks.md and change this task status from [ ] to [-]
@@ -699,7 +699,7 @@
 
     Requirements:
     - All requirements (Requirement 1-5)
-    - Non-Functional Requirements: Testability (80% coverage)
+    - Non-Functional Requirements: Testability (95% coverage)
 
     Success:
     - Test scenario 1: Full success workflow (Rapras login → fetch sellers → fetch products → intermediate CSV → anime filter → final CSV)
@@ -727,23 +727,23 @@
 
 - [ ] 16. 品質チェック実行 & 修正
   - File: Multiple files (all modules and tests)
-  - Purpose: Black, Ruff, pytest, カバレッジ80%達成
+  - Purpose: Black, Ruff, pytest, カバレッジ95%達成
   - _Leverage: black, ruff, pytest, pytest-cov, bandit, safety_
-  - _Requirements: Non-Functional Requirements (Code Quality, Test Coverage 80%)_
+  - _Requirements: Non-Functional Requirements (Code Quality, Test Coverage 95%)_
   - _Prompt:
     ```
     Implement the task for spec seller-data-collection-analysis, first run spec-workflow-guide to get the workflow guide then implement the task:
 
     Role: Senior Python Developer specializing in code quality and security
 
-    Task: Execute all quality checks following tech.md standards and fix any issues to meet Non-Functional Requirements from .spec-workflow/specs/seller-data-collection-analysis/requirements.md. Ensure 80% test coverage and zero security vulnerabilities.
+    Task: Execute all quality checks following tech.md standards and fix any issues to meet Non-Functional Requirements from .spec-workflow/specs/seller-data-collection-analysis/requirements.md. Ensure 95% test coverage and zero security vulnerabilities.
 
     Restrictions:
     - Follow exact order from tech.md (Black → Ruff → pytest → Coverage → bandit → safety)
     - Do not delete tests to achieve coverage
     - Fix all High severity bandit warnings
     - All pytest tests must pass
-    - Coverage must be >= 80%
+    - Coverage must be >= 95%
     - Do not skip any quality check steps
 
     Leverage:
@@ -755,13 +755,13 @@
     - safety (dependency vulnerability checking)
 
     Requirements:
-    - Non-Functional Requirements: Code Quality, Test Coverage 80%
+    - Non-Functional Requirements: Code Quality, Test Coverage 95%
 
     Success:
     - Step 1: black modules/ tests/ main.py (auto-format applied)
     - Step 2: ruff check --fix modules/ tests/ main.py (all auto-fixable issues resolved)
     - Step 3: pytest tests/ -v (all tests pass)
-    - Step 4: pytest --cov=modules --cov-report=html (coverage >= 80%)
+    - Step 4: pytest --cov=modules --cov-report=html (coverage >= 95%)
     - Step 5: bandit -r modules/ tests/ main.py (no High severity warnings)
     - Step 6: safety check --json (no vulnerabilities)
     - All quality checks pass

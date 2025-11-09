@@ -121,7 +121,7 @@ Rapras（https://www.rapras.jp/）とYahoo Auctions（https://auctions.yahoo.co.
 - **CSV Compatibility**: Excel、Google Sheetsで開ける標準CSV形式
 
 ### Testability
-- **Test Coverage**: 80%以上（tech.md準拠）
+- **Test Coverage**: 95%以上（tech.md準拠）
 - **Unit Tests**: 各モジュールの正常系・異常系・境界値テスト
 - **Integration Tests**: Rapras/Yahoo Auctions実環境テスト
 - **Mock Support**: スクレイピング操作とGemini API呼び出しをモック可能な設計

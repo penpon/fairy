@@ -110,7 +110,7 @@
 - **Logging**: INFO/WARNING/ERRORレベルでのログ出力（modules/utils/logger.py使用）
 
 ### Testability
-- **Test Coverage**: 80%以上（tech.md準拠）
+- **Test Coverage**: 95%以上（tech.md準拠）
 - **Unit Tests**: 各メソッドの正常系・異常系・境界値テスト
 - **Integration Tests**: Rapras/Yahoo Auctions実環境テスト
 - **Mock Support**: Playwright操作をモック可能な設計
