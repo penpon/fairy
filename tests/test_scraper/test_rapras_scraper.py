@@ -245,3 +245,32 @@ class TestRaprasScraper:
 
             # エラーを発生させずに正常終了することを確認
             await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_restore_session_no_cookies(self, rapras_scraper, mock_playwright):
+        """異常系: セッションにCookieが存在しない場合"""
+        # Given: load_sessionがNoneを返す
+        with patch.object(rapras_scraper.session_manager, "load_session", return_value=None):
+            # When: セッション復元を試みる
+            result = await rapras_scraper._restore_session()
+
+            # Then: Falseが返される
+            assert result is False
+
+    @pytest.mark.asyncio
+    async def test_restore_session_exception(self, rapras_scraper, mock_playwright):
+        """異常系: セッション復元中に例外が発生"""
+        # Given: ブラウザ起動時に例外が発生
+        with (
+            patch.object(
+                rapras_scraper.session_manager, "load_session", return_value=[{"name": "test"}]
+            ),
+            patch.object(
+                rapras_scraper, "_launch_browser", side_effect=RuntimeError("Browser error")
+            ),
+        ):
+            # When: セッション復元を試みる
+            result = await rapras_scraper._restore_session()
+
+            # Then: Falseが返される（例外は内部で処理される）
+            assert result is False

@@ -20,8 +20,6 @@ jobs:
 
     - name: uv のセットアップ
       uses: astral-sh/setup-uv@v3.0.0
-      with:
-        python-version: '3.12'
 
     - name: キャッシュの復元
       uses: actions/cache@v4
@@ -86,8 +84,6 @@ jobs:
 
     - name: uv のセットアップ
       uses: astral-sh/setup-uv@v3.0.0
-      with:
-        python-version: '3.12'
 
     - name: キャッシュの復元
       uses: actions/cache@v4
@@ -124,8 +120,6 @@ jobs:
 
     - name: uv のセットアップ
       uses: astral-sh/setup-uv@v3.0.0
-      with:
-        python-version: '3.12'
 
     - name: キャッシュの復元
       uses: actions/cache@v4

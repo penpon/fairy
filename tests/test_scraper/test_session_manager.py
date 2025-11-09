@@ -196,3 +196,56 @@ class TestSessionManager:
         # Then: セッションが正常に読み込める
         loaded_cookies = session_manager.load_session(service_name)
         assert loaded_cookies == sample_cookies
+
+    def test_save_session_write_error(
+        self, session_manager, temp_session_dir, sample_cookies, caplog
+    ):
+        """異常系: セッション保存時にOSErrorが発生する場合"""
+        # Given: ディレクトリ作成後、ファイル書き込みでOSErrorが発生
+        from unittest.mock import patch
+
+        service_name = "test"
+
+        with patch("pathlib.Path.open", side_effect=OSError("Disk full")):
+            # When: セッションを保存
+            session_manager.save_session(service_name, sample_cookies)
+
+            # Then: 警告ログが出力される
+            assert "Failed to save session" in caplog.text
+
+    def test_load_session_read_error(self, session_manager, temp_session_dir, caplog):
+        """異常系: セッション読み込み時にOSErrorが発生する場合"""
+        # Given: セッションファイルが存在するが読み込みでOSErrorが発生
+        from unittest.mock import patch
+
+        service_name = "test"
+        session_file = temp_session_dir / f"{service_name}_session.json"
+        temp_session_dir.mkdir(parents=True, exist_ok=True)
+        session_file.write_text('{"test": "data"}', encoding="utf-8")
+
+        with patch("pathlib.Path.open", side_effect=OSError("Permission denied")):
+            # When: セッションを読み込み
+            result = session_manager.load_session(service_name)
+
+            # Then: Noneが返される
+            assert result is None
+
+            # Then: 警告ログが出力される
+            assert "Failed to load session" in caplog.text
+
+    def test_delete_session_os_error(
+        self, session_manager, temp_session_dir, sample_cookies, caplog
+    ):
+        """異常系: セッション削除時にOSErrorが発生する場合"""
+        # Given: セッションファイルが存在し、削除時にOSErrorが発生
+        from unittest.mock import patch
+
+        service_name = "test"
+        session_manager.save_session(service_name, sample_cookies)
+
+        with patch("pathlib.Path.unlink", side_effect=OSError("Permission denied")):
+            # When: セッションを削除
+            session_manager.delete_session(service_name)
+
+            # Then: 警告ログが出力される
+            assert "Failed to delete session" in caplog.text

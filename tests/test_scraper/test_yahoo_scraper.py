@@ -363,3 +363,125 @@ class TestYahooAuctionScraper:
         ):
             with pytest.raises(ProxyAuthenticationError):
                 await yahoo_scraper._verify_proxy_connection()
+
+    @pytest.mark.asyncio
+    async def test_verify_proxy_connection_unexpected_error(self, yahoo_scraper, mock_playwright):
+        """異常系: プロキシ検証中に予期しないエラーが発生する"""
+        # Given: async_playwright().start()で例外が発生
+        mock_async_pw = mock_playwright["async_pw_instance"]
+        mock_async_pw.start.side_effect = RuntimeError("Unexpected playwright error")
+
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_async_pw,
+        ):
+            # When/Then: ProxyAuthenticationErrorが発生
+            with pytest.raises(ProxyAuthenticationError) as exc_info:
+                await yahoo_scraper._verify_proxy_connection()
+
+            assert "Proxy verification failed" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_verify_proxy_connection_cleanup_errors(self, yahoo_scraper, mock_playwright):
+        """異常系: プロキシ検証のクリーンアップ中にエラーが発生しても処理を継続"""
+        # Given: 各リソースのクローズ時にエラーが発生
+        mock_page = mock_playwright["page"]
+        mock_context = mock_playwright["context"]
+        mock_browser = mock_playwright["browser"]
+        mock_pw = mock_playwright["playwright"]
+
+        mock_page.close.side_effect = RuntimeError("Page close error")
+        mock_context.close.side_effect = RuntimeError("Context close error")
+        mock_browser.close.side_effect = RuntimeError("Browser close error")
+        mock_pw.stop.side_effect = RuntimeError("Playwright stop error")
+
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            # When: プロキシ検証が実行される（クリーンアップエラーは無視される）
+            await yahoo_scraper._verify_proxy_connection()
+
+    @pytest.mark.asyncio
+    async def test_restore_session_no_cookies(self, yahoo_scraper, mock_playwright):
+        """異常系: セッションにCookieが存在しない場合"""
+        # Given: load_sessionがNoneを返す
+        with patch.object(yahoo_scraper.session_manager, "load_session", return_value=None):
+            # When: セッション復元を試みる
+            result = await yahoo_scraper._restore_session()
+
+            # Then: Falseが返される
+            assert result is False
+
+    @pytest.mark.asyncio
+    async def test_restore_session_exception(self, yahoo_scraper, mock_playwright):
+        """異常系: セッション復元中に例外が発生"""
+        # Given: ブラウザ起動時に例外が発生
+        with (
+            patch.object(
+                yahoo_scraper.session_manager, "load_session", return_value=[{"name": "test"}]
+            ),
+            patch.object(
+                yahoo_scraper,
+                "_launch_browser_with_proxy",
+                side_effect=RuntimeError("Browser error"),
+            ),
+        ):
+            # When: セッション復元を試みる
+            result = await yahoo_scraper._restore_session()
+
+            # Then: Falseが返される（例外は内部で処理される）
+            assert result is False
+
+    @pytest.mark.asyncio
+    async def test_prompt_for_sms_code_success(self, yahoo_scraper):
+        """正常系: SMS認証コードが正常に入力される"""
+        # Given: ユーザーがSMSコードを入力
+        expected_code = "123456"
+
+        with patch("asyncio.to_thread", return_value=expected_code):
+            # When: SMS認証コード入力を待機
+            result = await yahoo_scraper._prompt_for_sms_code()
+
+            # Then: 入力されたコードが返される
+            assert result == expected_code
+
+    @pytest.mark.asyncio
+    async def test_prompt_for_sms_code_with_whitespace(self, yahoo_scraper):
+        """正常系: SMS認証コードに空白が含まれる場合、trimされる"""
+        # Given: ユーザーがSMSコードを空白付きで入力
+        input_code = "  123456  "
+        expected_code = "123456"
+
+        with patch("asyncio.to_thread", return_value=input_code):
+            # When: SMS認証コード入力を待機
+            result = await yahoo_scraper._prompt_for_sms_code()
+
+            # Then: trimされたコードが返される
+            assert result == expected_code
+
+    @pytest.mark.asyncio
+    async def test_prompt_for_sms_code_empty_input(self, yahoo_scraper):
+        """異常系: 空のSMS認証コードが入力された場合"""
+        # Given: ユーザーが空の入力
+        with patch("asyncio.to_thread", return_value="   "):
+            # When/Then: ValueErrorが発生
+            with pytest.raises(ValueError) as exc_info:
+                await yahoo_scraper._prompt_for_sms_code()
+
+            assert "SMS code cannot be empty" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_prompt_for_sms_code_timeout(self, yahoo_scraper):
+        """異常系: SMS認証コード入力がタイムアウト"""
+        # Given: 入力待機がタイムアウト
+
+        async def mock_timeout(*args, **kwargs):
+            raise TimeoutError()
+
+        with patch("asyncio.wait_for", side_effect=mock_timeout):
+            # When/Then: TimeoutErrorが発生
+            with pytest.raises(TimeoutError) as exc_info:
+                await yahoo_scraper._prompt_for_sms_code()
+
+            assert "SMS code input timeout" in str(exc_info.value)
