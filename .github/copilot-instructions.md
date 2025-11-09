@@ -1,5 +1,7 @@
 # Copilot Code Review Instructions
 
+**CRITICAL**: Think in English, but **ALL review comments MUST be written in Japanese**.
+
 **Role**: You are a code reviewer for the Yahoo Auction Scraper project. Focus on architecture compliance, quality standards, and security risks within the Phase 1-2 implementation scope.
 
 ---
@@ -189,34 +191,34 @@ async def fetch_all_sellers(seller_ids):
 
 ### Critical (Immediate fix required)
 ```
-🔴 **Critical - Security Risk**
-A `.env` file has been committed. This file contains authentication credentials and must be removed immediately.
+🔴 **Critical - セキュリティリスク**
+`.env`ファイルがコミットされています。このファイルには認証情報が含まれているため、直ちに削除する必要があります。
 
-How to fix:
+修正方法:
 1. `git rm --cached .env`
-2. Verify `.env` is in `.gitignore`
-3. Remove from GitHub history as well (`git filter-repo`)
+2. `.gitignore`に`.env`が含まれていることを確認
+3. GitHubの履歴からも削除（`git filter-repo`使用）
 ```
 
 ### High (Important fix)
 ```
-🟡 **High - Test Coverage**
-No tests found for the newly added `ProductAnalyzer.analyze_trends()` method.
+🟡 **High - テストカバレッジ**
+新規追加された`ProductAnalyzer.analyze_trends()`メソッドのテストが見つかりません。
 
-Required tests:
-- Normal case: Returns statistics for valid product list
-- Error cases: Empty list, None, invalid types raise errors
-- Boundary values: 0, 1, 1000 data items
+必要なテスト:
+- 正常系: 有効な商品リストに対して統計情報を返す
+- 異常系: 空リスト、None、無効な型でエラーを発生させる
+- 境界値: 0件、1件、1000件のデータ
 
-Reference: structure.md "Test Case Design Process"
+参考: structure.md「テストケース設計プロセス」
 ```
 
 ### Medium (Recommended improvement)
 ```
-🟢 **Medium - Naming Convention**
-Function name `fetchProducts` is in camelCase. Project convention uses snake_case.
+🟢 **Medium - 命名規則**
+関数名`fetchProducts`がキャメルケースになっています。プロジェクトの規約ではスネークケースを使用します。
 
-Fix example: `fetch_products`
+修正例: `fetch_products`
 ```
 
 ---
@@ -253,28 +255,28 @@ Refer to these during review:
 ## ✅ Good Review Example
 
 ```markdown
-## Review Summary
+## レビューサマリー
 
 ### 🔴 Critical Issues (2)
-1. **Security**: Line 45 - Password is hardcoded
-2. **Architecture**: Line 78 - `Analyzer` directly depends on `Scraper`
+1. **セキュリティ**: 45行目 - パスワードがハードコードされています
+2. **アーキテクチャ**: 78行目 - `Analyzer`が`Scraper`に直接依存しています
 
 ### 🟡 High Priority (3)
-1. **Test Coverage**: Missing tests for `analyze_trends()` method
-2. **Type Hints**: Functions on lines 23-34 lack type hints
-3. **Error Handling**: Exception swallowed on line 56
+1. **テストカバレッジ**: `analyze_trends()`メソッドのテストが不足しています
+2. **型ヒント**: 23-34行目の関数に型ヒントがありません
+3. **エラーハンドリング**: 56行目で例外が握り潰されています
 
 ### 🟢 Improvements (1)
-1. **Naming**: Recommend changing function name `fetchData` → `fetch_data`
+1. **命名規則**: 関数名`fetchData` → `fetch_data`への変更を推奨します
 
-### ✅ Good Points
-- Async processing is properly implemented
-- Docstrings are well written
-- Error logging is appropriate
+### ✅ 良い点
+- 非同期処理が適切に実装されています
+- Docstringが充実しています
+- エラーログが適切に記録されています
 
 ---
 
-**Overall**: Please re-review after fixing Critical issues.
+**総評**: Criticalな問題を修正後、再レビューをお願いします。
 ```
 
 ---
@@ -297,3 +299,5 @@ Refer to these during review:
 - Provide fix examples
 - Don't flag known issues
 - Strictly adhere to Phase 1-2 scope
+
+**CRITICAL**: Think in English, but **ALL review comments MUST be written in Japanese**.
