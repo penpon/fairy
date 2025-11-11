@@ -57,6 +57,14 @@ class TestYahooAuctionScraper:
             {"name": "session", "value": "yahoo123", "domain": ".yahoo.co.jp"}
         ]
 
+        # get_by_role()のモック（Locatorオブジェクトを返す）
+        # get_by_role()は同期関数でLocatorオブジェクトを返す
+        mock_locator = MagicMock()
+        mock_locator.click = AsyncMock()
+        mock_locator.fill = AsyncMock()
+        mock_locator.wait_for = AsyncMock(return_value=mock_locator)
+        mock_page.get_by_role = MagicMock(return_value=mock_locator)
+
         return {
             "async_pw_instance": mock_async_pw_instance,
             "playwright": mock_pw,
@@ -70,7 +78,10 @@ class TestYahooAuctionScraper:
         """正常系: プロキシ経由でログインが成功することを確認"""
         # Given: Playwrightとプロキシがモックされている
         mock_page = mock_playwright["page"]
-        mock_page.query_selector.return_value = MagicMock()  # ログイン状態
+        mock_page.query_selector.return_value = (
+            MagicMock()
+        )  # ログイン状態（ログアウトボタンが存在）
+        mock_page.text_content.return_value = "164.70.96.2"  # プロキシIPアドレス検証用
 
         # SMS入力をモック
         with (
@@ -86,7 +97,6 @@ class TestYahooAuctionScraper:
             # Then: ログインに成功
             assert result is True
             mock_page.goto.assert_called()
-            mock_page.fill.assert_called()
 
             # Then: セッションが保存される
             assert yahoo_scraper.session_manager.session_exists("yahoo")
@@ -161,10 +171,13 @@ class TestYahooAuctionScraper:
             patch.object(yahoo_scraper, "_verify_proxy_connection", return_value=None),
         ):
             # When: ログイン
-            await yahoo_scraper.login(phone_number)
+            result = await yahoo_scraper.login(phone_number)
 
-            # Then: 電話番号が入力される
-            assert mock_page.fill.call_count >= 2  # 電話番号とSMSコード
+            # Then: ログインに成功
+            assert result is True
+            # 電話番号入力はget_by_role().fill()、SMSコード入力はpage.fill()を使用
+            assert mock_page.fill.call_count >= 1  # SMSコード
+            mock_page.get_by_role.assert_called()  # 電話番号入力とボタンクリック
 
         # クリーンアップ
         await yahoo_scraper.close()
@@ -173,13 +186,18 @@ class TestYahooAuctionScraper:
     async def test_custom_yahoo_url(self, session_manager, proxy_config):
         """正常系: カスタムYahoo URLが使用されることを確認"""
         # Given: カスタムURLでYahooAuctionScraperを作成
-        custom_url = "https://custom.yahoo.co.jp/"
+        custom_login_url = "https://custom.yahoo.co.jp/login"
+        custom_auctions_url = "https://custom.yahoo.co.jp/auctions"
         scraper = YahooAuctionScraper(
-            session_manager=session_manager, proxy_config=proxy_config, yahoo_url=custom_url
+            session_manager=session_manager,
+            proxy_config=proxy_config,
+            yahoo_login_url=custom_login_url,
+            yahoo_auctions_url=custom_auctions_url,
         )
 
         # Then: カスタムURLが設定される
-        assert scraper.yahoo_url == custom_url
+        assert scraper.yahoo_login_url == custom_login_url
+        assert scraper.yahoo_auctions_url == custom_auctions_url
 
     @pytest.mark.asyncio
     async def test_proxy_configuration(self, yahoo_scraper, proxy_config):
@@ -344,6 +362,9 @@ class TestYahooAuctionScraper:
     @pytest.mark.asyncio
     async def test_verify_proxy_connection_success(self, yahoo_scraper, mock_playwright):
         """正常系: プロキシ接続の検証が成功する"""
+        mock_page = mock_playwright["page"]
+        mock_page.text_content.return_value = "164.70.96.2"  # 期待されるIPアドレス
+
         with patch(
             "modules.scraper.yahoo_scraper.async_playwright",
             return_value=mock_playwright["async_pw_instance"],
@@ -390,6 +411,7 @@ class TestYahooAuctionScraper:
         mock_browser = mock_playwright["browser"]
         mock_pw = mock_playwright["playwright"]
 
+        mock_page.text_content.return_value = "164.70.96.2"  # IPアドレス検証用
         mock_page.close.side_effect = RuntimeError("Page close error")
         mock_context.close.side_effect = RuntimeError("Context close error")
         mock_browser.close.side_effect = RuntimeError("Browser close error")

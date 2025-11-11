@@ -48,6 +48,12 @@ class TestRaprasScraper:
             {"name": "session", "value": "test123", "domain": ".rapras.jp"}
         ]
 
+        # get_by_role()のモック（Locatorオブジェクトを返す）
+        # get_by_role()は同期関数でLocatorオブジェクトを返す
+        mock_locator = MagicMock()
+        mock_locator.click = AsyncMock()
+        mock_page.get_by_role = MagicMock(return_value=mock_locator)
+
         return {
             "async_pw_instance": mock_async_pw_instance,
             "playwright": mock_pw,
@@ -61,7 +67,9 @@ class TestRaprasScraper:
         """正常系: ログインが成功することを確認"""
         # Given: Playwrightがモックされている
         mock_page = mock_playwright["page"]
-        mock_page.query_selector.return_value = MagicMock()  # ログイン状態を示す要素が存在
+        mock_page.query_selector.return_value = (
+            MagicMock()
+        )  # ログアウトリンクが存在（ログイン済み）
 
         with patch(
             "modules.scraper.rapras_scraper.async_playwright",
@@ -73,8 +81,8 @@ class TestRaprasScraper:
             # Then: ログインに成功
             assert result is True
             mock_page.goto.assert_called()
-            mock_page.fill.assert_called()
-            mock_page.click.assert_called()
+            assert mock_page.fill.call_count >= 2  # username と password
+            mock_page.get_by_role.assert_called_with("button", name="ログイン")
 
             # Then: セッションが保存される
             assert rapras_scraper.session_manager.session_exists("rapras")
