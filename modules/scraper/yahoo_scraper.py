@@ -49,8 +49,7 @@ class YahooAuctionScraper:
         required_keys = {"url", "username", "password"}
         if not all(key in proxy_config for key in required_keys):
             missing_keys = required_keys - set(proxy_config.keys())
-            raise ValueError(
-                f"proxy_config is missing required keys: {missing_keys}")
+            raise ValueError(f"proxy_config is missing required keys: {missing_keys}")
 
         self.session_manager = session_manager
         self.proxy_config = proxy_config
@@ -94,15 +93,13 @@ class YahooAuctionScraper:
 
                 # セッションが存在する場合は復元を試みる
                 if self.session_manager.session_exists("yahoo"):
-                    logger.info(
-                        "Existing session found, attempting to restore")
+                    logger.info("Existing session found, attempting to restore")
                     if await self._restore_session():
                         if await self.is_logged_in():
                             logger.info("Session restored successfully")
                             return True
                         else:
-                            logger.warning(
-                                "Session restoration failed, proceeding with login")
+                            logger.warning("Session restoration failed, proceeding with login")
 
                 # ブラウザを起動（プロキシ設定を含む）
                 await self._launch_browser_with_proxy()
@@ -126,12 +123,16 @@ class YahooAuctionScraper:
                 # Yahoo Auctionsページに遷移してログイン確認
                 logger.info("Navigating to Yahoo Auctions to verify login")
                 try:
-                    await self.page.goto(self.yahoo_auctions_url, timeout=self._timeout, wait_until="domcontentloaded")
-                    logger.info(
-                        f"Navigated to Yahoo Auctions: {self.yahoo_auctions_url}")
+                    await self.page.goto(
+                        self.yahoo_auctions_url,
+                        timeout=self._timeout,
+                        wait_until="domcontentloaded",
+                    )
+                    logger.info(f"Navigated to Yahoo Auctions: {self.yahoo_auctions_url}")
                 except Exception as e:
                     logger.warning(
-                        f"Failed to navigate to Yahoo Auctions: {e}, trying with current page")
+                        f"Failed to navigate to Yahoo Auctions: {e}, trying with current page"
+                    )
 
                 # ログイン成功を確認
                 if await self.is_logged_in():
@@ -151,16 +152,14 @@ class YahooAuctionScraper:
                 if attempt < self._max_retries - 1:
                     await self._retry_with_backoff(attempt)
                 else:
-                    raise TimeoutError(
-                        f"Login timed out after {self._max_retries} attempts") from e
+                    raise TimeoutError(f"Login timed out after {self._max_retries} attempts") from e
 
             except Exception as e:
                 logger.error(f"Unexpected error during login: {e}")
                 if attempt < self._max_retries - 1:
                     await self._retry_with_backoff(attempt)
                 else:
-                    raise LoginError(
-                        f"Login failed after {self._max_retries} attempts: {e}") from e
+                    raise LoginError(f"Login failed after {self._max_retries} attempts: {e}") from e
 
         # forループを抜けた = 3回すべて失敗した
         raise LoginError(
@@ -224,9 +223,7 @@ class YahooAuctionScraper:
                 if current_ip != expected_ip:
                     error_msg = f"IP address mismatch! Expected: {expected_ip}, Got: {current_ip}"
                     logger.error(error_msg)
-                    raise ProxyAuthenticationError(
-                        f"Proxy IP verification failed. {error_msg}"
-                    )
+                    raise ProxyAuthenticationError(f"Proxy IP verification failed. {error_msg}")
 
                 logger.info(f"✅ IP address verified: {current_ip}")
 
@@ -242,8 +239,7 @@ class YahooAuctionScraper:
             raise
         except Exception as e:
             logger.error(f"Unexpected error during proxy verification: {e}")
-            raise ProxyAuthenticationError(
-                f"Proxy verification failed: {e}") from e
+            raise ProxyAuthenticationError(f"Proxy verification failed: {e}") from e
         finally:
             # リソースをクリーンアップ
             if temp_page:
@@ -389,8 +385,7 @@ class YahooAuctionScraper:
 
         except TimeoutError as e:
             logger.error("SMS code input timeout")
-            raise TimeoutError(
-                "SMS code input timeout. Please try again.") from e
+            raise TimeoutError("SMS code input timeout. Please try again.") from e
 
     async def _fill_sms_code(self, sms_code: str) -> None:
         """SMS認証コードを入力フォームに入力し、ログインボタンをクリック
@@ -411,8 +406,7 @@ class YahooAuctionScraper:
             try:
                 code_input = await self.page.wait_for_selector(selector, timeout=5000)
                 if code_input:
-                    logger.info(
-                        f"Found SMS code input with selector: {selector}")
+                    logger.info(f"Found SMS code input with selector: {selector}")
                     break
             except Exception:
                 continue
@@ -429,7 +423,9 @@ class YahooAuctionScraper:
 
         # 方法1: ボタンのテキストで探す
         try:
-            login_button = await self.page.get_by_role("button", name="ログイン").wait_for(timeout=3000)
+            login_button = await self.page.get_by_role("button", name="ログイン").wait_for(
+                timeout=3000
+            )
             if login_button:
                 await login_button.click()
                 logger.info("Clicked 'Login' button (by role)")
@@ -464,6 +460,7 @@ class YahooAuctionScraper:
 
         # Yahoo側のリダイレクトが完全に完了するまで少し待機
         import asyncio
+
         await asyncio.sleep(2)
         logger.info(f"Current URL after SMS auth: {self.page.url}")
 
@@ -506,22 +503,20 @@ class YahooAuctionScraper:
             # 2. ユーザーメニューやアカウント情報の存在を確認
             user_menu_selectors = [
                 'a[href*="myauctions"]',  # マイオークションリンク
-                'div[class*="user"]',      # ユーザー関連のdiv
-                'a[href*="account"]',      # アカウントリンク
+                'div[class*="user"]',  # ユーザー関連のdiv
+                'a[href*="account"]',  # アカウントリンク
             ]
             for selector in user_menu_selectors:
                 element = await self.page.query_selector(selector)
                 if element:
-                    logger.debug(
-                        f"Found user element ({selector}) - logged in")
+                    logger.debug(f"Found user element ({selector}) - logged in")
                     return True
 
             # 3. yahoo.co.jpまたはauctions.yahoo.co.jpにいて、ログインフォームがない場合はログイン済みと判定
             if "yahoo.co.jp" in current_url:
                 login_form = await self.page.query_selector('input[name="login"]')
                 if not login_form:
-                    logger.debug(
-                        "On Yahoo domain without login form - likely logged in")
+                    logger.debug("On Yahoo domain without login form - likely logged in")
                     return True
 
             logger.debug("No login indicators found - not logged in")
