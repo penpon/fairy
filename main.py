@@ -6,6 +6,9 @@ Rapras & Yahoo Auctions 認証の使用例
 """
 
 import asyncio
+import os
+
+from dotenv import load_dotenv
 
 from modules.config.settings import load_proxy_config, load_rapras_config, load_yahoo_config
 from modules.scraper.rapras_scraper import RaprasScraper
@@ -18,6 +21,12 @@ logger = get_logger(__name__)
 
 async def main():
     """メイン処理"""
+    # .envファイルから環境変数を読み込み
+    load_dotenv()
+
+    # ヘッドレスモード設定を読み込み（デフォルト: True）
+    headless = os.getenv("HEADLESS", "true").lower() in ("true", "1", "yes")
+
     # セッションマネージャーを作成
     session_manager = SessionManager(session_dir="sessions")
 
@@ -31,7 +40,7 @@ async def main():
         rapras_config = load_rapras_config()
 
         # RaprasScraperを作成
-        rapras_scraper = RaprasScraper(session_manager=session_manager)
+        rapras_scraper = RaprasScraper(session_manager=session_manager, headless=headless)
 
         # ログイン実行
         success = await rapras_scraper.login(rapras_config.username, rapras_config.password)
@@ -66,7 +75,7 @@ async def main():
 
         # YahooAuctionScraperを作成
         yahoo_scraper = YahooAuctionScraper(
-            session_manager=session_manager, proxy_config=proxy_dict
+            session_manager=session_manager, proxy_config=proxy_dict, headless=headless
         )
 
         # ログイン実行（SMS認証コードの入力を促されます）

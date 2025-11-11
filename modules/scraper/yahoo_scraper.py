@@ -29,14 +29,18 @@ class YahooAuctionScraper:
         self,
         session_manager: SessionManager,
         proxy_config: dict[str, str],
-        yahoo_url: str = "https://auctions.yahoo.co.jp/",
+        yahoo_login_url: str = "https://login.yahoo.co.jp/config/login",
+        yahoo_auctions_url: str = "https://auctions.yahoo.co.jp/",
+        headless: bool = True,
     ) -> None:
         """初期化：SessionManagerとプロキシ設定を依存注入
 
         Args:
             session_manager: Cookie管理用のSessionManager
             proxy_config: {"url": "...", "username": "...", "password": "..."}（urlはプロキシサーバーのURL）
-            yahoo_url: Yahoo AuctionsのURL（デフォルト: https://auctions.yahoo.co.jp/）
+            yahoo_login_url: Yahoo ログインページのURL（デフォルト: https://login.yahoo.co.jp/config/login）
+            yahoo_auctions_url: Yahoo AuctionsのURL（デフォルト: https://auctions.yahoo.co.jp/）
+            headless: ブラウザをヘッドレスモードで起動するか（デフォルト: True）
 
         Raises:
             ValueError: proxy_configに必須キーが不足している場合
@@ -49,7 +53,9 @@ class YahooAuctionScraper:
 
         self.session_manager = session_manager
         self.proxy_config = proxy_config
-        self.yahoo_url = yahoo_url
+        self.yahoo_login_url = yahoo_login_url
+        self.yahoo_auctions_url = yahoo_auctions_url
+        self.headless = headless
         self.playwright: Playwright | None = None
         self.browser: Browser | None = None
         self.context: BrowserContext | None = None
@@ -57,7 +63,7 @@ class YahooAuctionScraper:
         self._max_retries = 3
         self._retry_delays = [2, 4, 8]  # 指数バックオフ（秒）
         self._timeout = 30000  # 30秒（ミリ秒）
-        self._sms_timeout = 180  # 3分（秒）
+        self._sms_timeout = 180  # 3分（秒）  # 3分（秒）
 
     async def login(self, phone_number: str) -> bool:
         """Yahoo Auctionsにログイン（SMS認証）
@@ -99,8 +105,8 @@ class YahooAuctionScraper:
                 await self._launch_browser_with_proxy()
 
                 # ログインページにアクセス
-                await self.page.goto(self.yahoo_url, timeout=self._timeout)
-                logger.info(f"Navigated to {self.yahoo_url}")
+                await self.page.goto(self.yahoo_login_url, timeout=self._timeout)
+                logger.info(f"Navigated to {self.yahoo_login_url}")
 
                 # 電話番号を入力
                 await self._fill_phone_number(phone_number)
@@ -113,6 +119,14 @@ class YahooAuctionScraper:
 
                 # SMS認証コードを入力
                 await self._fill_sms_code(sms_code)
+
+                # Yahoo Auctionsページに遷移してログイン確認
+                logger.info("Navigating to Yahoo Auctions to verify login")
+                try:
+                    await self.page.goto(self.yahoo_auctions_url, timeout=self._timeout, wait_until="domcontentloaded")
+                    logger.info(f"Navigated to Yahoo Auctions: {self.yahoo_auctions_url}")
+                except Exception as e:
+                    logger.warning(f"Failed to navigate to Yahoo Auctions: {e}, trying with current page")
 
                 # ログイン成功を確認
                 if await self.is_logged_in():
@@ -147,10 +161,10 @@ class YahooAuctionScraper:
         )
 
     async def _verify_proxy_connection(self) -> None:
-        """プロキシ接続を検証
+        """プロキシ接続を検証し、IPアドレスが期待値と一致するか確認
 
         Raises:
-            ProxyAuthenticationError: プロキシ認証失敗
+            ProxyAuthenticationError: プロキシ認証失敗またはIPアドレス不一致
         """
         temp_playwright = None
         temp_browser = None
@@ -160,7 +174,7 @@ class YahooAuctionScraper:
         try:
             # 一時的にブラウザを起動してプロキシ接続を確認
             temp_playwright = await async_playwright().start()
-            temp_browser = await temp_playwright.chromium.launch(headless=True)
+            temp_browser = await temp_playwright.chromium.launch(headless=self.headless)
 
             # プロキシ設定でコンテキストを作成
             temp_context = await temp_browser.new_context(
@@ -183,6 +197,39 @@ class YahooAuctionScraper:
                 raise ProxyAuthenticationError(
                     "Proxy authentication failed. Please check PROXY_USERNAME and PROXY_PASSWORD in .env"
                 ) from e
+
+            # IPアドレスの確認（/ip エンドポイントを使用してプレーンテキストのIPのみを取得）
+            try:
+                logger.info("Checking IP address via proxy...")
+                await temp_page.goto("https://inet-ip.info/ip", timeout=10000)
+                
+                # ページのテキストコンテンツを取得（プレーンテキストのIPアドレスのみ）
+                ip_text = await temp_page.text_content("body")
+                
+                # IPアドレスを抽出（前後の空白や改行を削除）
+                current_ip = ip_text.strip() if ip_text else ""
+                
+                logger.info(f"Current IP address: {current_ip}")
+                
+                # 期待されるIPアドレス
+                expected_ip = "164.70.96.2"
+                
+                if current_ip != expected_ip:
+                    error_msg = f"IP address mismatch! Expected: {expected_ip}, Got: {current_ip}"
+                    logger.error(error_msg)
+                    raise ProxyAuthenticationError(
+                        f"Proxy IP verification failed. {error_msg}"
+                    )
+                
+                logger.info(f"✅ IP address verified: {current_ip}")
+                
+            except ProxyAuthenticationError:
+                raise
+            except Exception as e:
+                logger.warning(f"IP address verification failed: {e}")
+                # IP確認に失敗してもプロキシ接続自体は成功しているので続行
+                # より厳格にしたい場合はここでraiseする
+                logger.warning("Continuing despite IP verification failure...")
 
         except ProxyAuthenticationError:
             raise
@@ -221,7 +268,7 @@ class YahooAuctionScraper:
             self.playwright = await async_playwright().start()
 
         if not self.browser:
-            self.browser = await self.playwright.chromium.launch(headless=True)
+            self.browser = await self.playwright.chromium.launch(headless=self.headless)
 
         if not self.context:
             # プロキシ設定を含むコンテキストを作成
@@ -253,7 +300,7 @@ class YahooAuctionScraper:
 
             await self._launch_browser_with_proxy()
             await self.context.add_cookies(cookies)
-            await self.page.goto(self.yahoo_url, timeout=self._timeout)
+            await self.page.goto(self.yahoo_auctions_url, timeout=self._timeout)
             return True
 
         except Exception as e:
@@ -266,16 +313,44 @@ class YahooAuctionScraper:
         Args:
             phone_number: 電話番号
         """
-        # 実際のYahoo Auctionsサイトのセレクタに合わせて調整が必要
-        await self.page.fill('input[name="phone"]', phone_number, timeout=self._timeout)
+        # Yahoo JAPANログインページの携帯電話番号入力フィールド
+        await self.page.get_by_role("textbox", name="携帯電話番号/メールアドレス/ID").fill(
+            phone_number, timeout=self._timeout
+        )
         logger.info("Phone number filled (value not logged for security)")
 
     async def _click_send_sms_button(self) -> None:
-        """SMS送信ボタンをクリック"""
-        # 実際のYahoo Auctionsサイトのセレクタに合わせて調整が必要
-        await self.page.click('button[type="submit"]', timeout=self._timeout)
+        """「次へ」ボタンをクリックしてSMS送信画面へ、そして「認証コードを送信」ボタンをクリック"""
+        # 「次へ」ボタンをクリック
+        await self.page.get_by_role("button", name="次へ").click(timeout=self._timeout)
         await self.page.wait_for_load_state("networkidle", timeout=self._timeout)
-        logger.info("SMS send button clicked")
+        logger.info("'Next' button clicked")
+        
+        # パスキー認証画面が表示される場合があるので「他の方法でログイン」をクリック
+        try:
+            other_method_button = await self.page.get_by_role(
+                "button", name="他の方法でログイン"
+            ).wait_for(timeout=5000)
+            if other_method_button:
+                await other_method_button.click()
+                logger.info("Clicked 'Other login methods' button")
+                await self.page.wait_for_load_state("networkidle", timeout=self._timeout)
+        except Exception:
+            # ボタンが見つからない場合はスキップ（すでにSMS入力画面の場合）
+            logger.info("No 'Other login methods' button found, proceeding")
+        
+        # 「認証コードを送信」ボタンをクリック
+        try:
+            send_code_button = await self.page.get_by_role(
+                "button", name="認証コードを送信"
+            ).wait_for(timeout=5000)
+            if send_code_button:
+                await send_code_button.click()
+                logger.info("Clicked 'Send verification code' button")
+                await self.page.wait_for_load_state("networkidle", timeout=self._timeout)
+        except Exception as e:
+            # ボタンが見つからない場合はログに記録して続行
+            logger.warning(f"'Send verification code' button not found: {e}")
 
     async def _prompt_for_sms_code(self) -> str:
         """ユーザーにSMS認証コード入力を促す
@@ -309,16 +384,78 @@ class YahooAuctionScraper:
             raise TimeoutError("SMS code input timeout. Please try again.") from e
 
     async def _fill_sms_code(self, sms_code: str) -> None:
-        """SMS認証コードを入力フォームに入力
+        """SMS認証コードを入力フォームに入力し、ログインボタンをクリック
 
         Args:
             sms_code: SMS認証コード
         """
-        # 実際のYahoo Auctionsサイトのセレクタに合わせて調整が必要
-        await self.page.fill('input[name="code"]', sms_code, timeout=self._timeout)
-        await self.page.click('button[type="submit"]', timeout=self._timeout)
+        # SMS認証コード入力フィールドを探す（複数のセレクタを試す）
+        code_input = None
+        selectors = [
+            'input[name="code"]',
+            'input[type="text"]',
+            'input[placeholder*="認証"]',
+            'input[placeholder*="コード"]',
+        ]
+        
+        for selector in selectors:
+            try:
+                code_input = await self.page.wait_for_selector(selector, timeout=5000)
+                if code_input:
+                    logger.info(f"Found SMS code input with selector: {selector}")
+                    break
+            except Exception:
+                continue
+        
+        if not code_input:
+            raise ValueError("SMS code input field not found")
+        
+        # SMSコードを入力
+        await self.page.fill(selector, sms_code, timeout=self._timeout)
+        logger.info("SMS code filled")
+        
+        # ログインボタンをクリック（複数の方法を試す）
+        login_clicked = False
+        
+        # 方法1: ボタンのテキストで探す
+        try:
+            login_button = await self.page.get_by_role("button", name="ログイン").wait_for(timeout=3000)
+            if login_button:
+                await login_button.click()
+                logger.info("Clicked 'Login' button (by role)")
+                login_clicked = True
+        except Exception:
+            pass
+        
+        # 方法2: submitボタンで探す
+        if not login_clicked:
+            try:
+                await self.page.click('button[type="submit"]', timeout=3000)
+                logger.info("Clicked submit button")
+                login_clicked = True
+            except Exception:
+                pass
+        
+        # 方法3: Enterキーを押す
+        if not login_clicked:
+            try:
+                await self.page.keyboard.press("Enter")
+                logger.info("Pressed Enter key to submit")
+                login_clicked = True
+            except Exception:
+                pass
+        
+        if not login_clicked:
+            raise ValueError("Failed to click login button")
+        
+        # ページ遷移を待つ
         await self.page.wait_for_load_state("networkidle", timeout=self._timeout)
-        logger.info("SMS code submitted")
+        logger.info("SMS code submitted and login attempted")
+        
+        # Yahoo側のリダイレクトが完全に完了するまで少し待機
+        import asyncio
+        await asyncio.sleep(2)
+        logger.info(f"Current URL after SMS auth: {self.page.url}")
 
     async def _retry_with_backoff(self, attempt: int) -> None:
         """指数バックオフでリトライ待機
@@ -340,10 +477,43 @@ class YahooAuctionScraper:
             if not self.page:
                 return False
 
-            # 実際のYahoo Auctionsサイトのログイン判定ロジックに合わせて調整が必要
-            # ここではログアウトボタンまたはユーザーメニューの存在で判定
+            # 現在のURLを取得
+            current_url = self.page.url
+            logger.debug(f"Checking login status at URL: {current_url}")
+
+            # ログインページにいる場合は未ログイン
+            if "login.yahoo.co.jp" in current_url:
+                logger.debug("Currently on login page - not logged in")
+                return False
+
+            # Yahoo系のドメインにいる場合、複数の条件でログイン状態を確認
+            # 1. ログアウトリンクの存在を確認
             logout_button = await self.page.query_selector('a[href*="logout"]')
-            return logout_button is not None
+            if logout_button:
+                logger.debug("Found logout link - logged in")
+                return True
+
+            # 2. ユーザーメニューやアカウント情報の存在を確認
+            user_menu_selectors = [
+                'a[href*="myauctions"]',  # マイオークションリンク
+                'div[class*="user"]',      # ユーザー関連のdiv
+                'a[href*="account"]',      # アカウントリンク
+            ]
+            for selector in user_menu_selectors:
+                element = await self.page.query_selector(selector)
+                if element:
+                    logger.debug(f"Found user element ({selector}) - logged in")
+                    return True
+
+            # 3. yahoo.co.jpまたはauctions.yahoo.co.jpにいて、ログインフォームがない場合はログイン済みと判定
+            if "yahoo.co.jp" in current_url:
+                login_form = await self.page.query_selector('input[name="login"]')
+                if not login_form:
+                    logger.debug("On Yahoo domain without login form - likely logged in")
+                    return True
+
+            logger.debug("No login indicators found - not logged in")
+            return False
 
         except Exception as e:
             logger.warning(f"Failed to check login status: {e}")

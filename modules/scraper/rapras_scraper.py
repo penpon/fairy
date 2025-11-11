@@ -20,16 +20,21 @@ class RaprasScraper:
     """Raprasサイトへのユーザー名・パスワード認証を自動化するクラス"""
 
     def __init__(
-        self, session_manager: SessionManager, rapras_url: str = "https://www.rapras.jp/"
+        self,
+        session_manager: SessionManager,
+        rapras_url: str = "https://www.rapras.jp/",
+        headless: bool = True,
     ) -> None:
         """初期化：SessionManagerを依存注入
 
         Args:
             session_manager: Cookie管理用のSessionManager
             rapras_url: RaprasのURL（デフォルト: https://www.rapras.jp/）
+            headless: ブラウザをヘッドレスモードで起動するか（デフォルト: True）
         """
         self.session_manager = session_manager
         self.rapras_url = rapras_url
+        self.headless = headless
         self.playwright: Playwright | None = None
         self.browser: Browser | None = None
         self.context: BrowserContext | None = None
@@ -123,7 +128,7 @@ class RaprasScraper:
             self.playwright = await async_playwright().start()
 
         if not self.browser:
-            self.browser = await self.playwright.chromium.launch(headless=True)
+            self.browser = await self.playwright.chromium.launch(headless=self.headless)
 
         if not self.context:
             self.context = await self.browser.new_context()
@@ -166,8 +171,8 @@ class RaprasScraper:
 
     async def _click_login_button(self) -> None:
         """ログインボタンをクリック"""
-        # 実際のRaprasサイトのセレクタに合わせて調整が必要
-        await self.page.click('button[type="submit"]', timeout=self._timeout)
+        # テキストが「ログイン」のボタンをクリック
+        await self.page.get_by_role("button", name="ログイン").click(timeout=self._timeout)
         await self.page.wait_for_load_state("networkidle", timeout=self._timeout)
         logger.info("Login button clicked")
 
