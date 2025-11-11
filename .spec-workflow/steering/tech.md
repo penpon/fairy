@@ -81,8 +81,13 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 **Development Workflow（tmux並列実行推奨）**
 
 1. **実装フェーズ（feature/* ブランチ）**
-   - git worktree で feature ブランチ作成
+   - `/start-task` でfeatureブランチ作成（git worktree自動化）
+     - spec名とタスクIDを指定してブランチ作成
+     - tasks.mdの自動更新（[ ] → [-]）
+     - worktree作成と自動ディレクトリ移動
    - `/tdd-cycle` でTDD実装（Red → Green → Refactor → QC → Log → Commit）
+     - **ブランチチェック**: main/developブランチでは実行不可
+     - **タスクID整合性チェック**: ブランチとタスクIDの一致を検証
      - TDDサイクルが強制され、確実にテストファーストで実装
      - 品質チェック（`/quality-check`）が自動実行される
 
@@ -108,8 +113,14 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 **ワークフロー チェックリスト（参考）**
 
 タスク実装サイクル:
-- [ ] 1. git worktree でfeatureブランチ作成
-- [ ] 2. `/tdd-cycle` でTDD実装
+- [ ] 1. `/start-task <spec-name> <task-id> [branch-name]` でfeatureブランチ作成
+  - 例: `/start-task seller-data-collection-analysis 1 seller-models`
+  - git worktree自動作成 & 自動移動
+  - tasks.mdステータス更新（[ ] → [-]）
+- [ ] 2. `/tdd-cycle <task-id> <プロンプト>` でTDD実装
+  - 例: `/tdd-cycle 1 Implement seller models...`
+  - ブランチチェック & タスクID整合性検証
+  - Red → Green → Refactor → QC → Log → Commit
 - [ ] 3. `/rabbit-rocket` でレビュー&PR作成
 - [ ] 4. GitHub自動レビュー（CodeRabbit/Copilot）
 - [ ] 5. GitHub自動修正（必要時）
