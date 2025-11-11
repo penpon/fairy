@@ -8,6 +8,8 @@ Requirements:
 
 import pytest
 
+from modules.storage.models import Product, Seller
+
 
 class TestSellerModel:
     """Test Seller dataclass."""
@@ -15,8 +17,6 @@ class TestSellerModel:
     def test_seller_instantiation_normal(self):
         """T001: 正常系 - 全フィールドが正しく設定されたSellerインスタンス作成."""
         # Given: 有効なデータ
-        from modules.storage.models import Seller
-
         # When: Sellerインスタンスを作成
         seller = Seller(
             seller_name="アート工房 クリスプ",
@@ -39,8 +39,6 @@ class TestSellerModel:
     def test_seller_is_anime_seller_true(self):
         """T002: 正常系 - is_anime_seller=Trueの二次創作セラー."""
         # Given: アニメ判定がTrueのデータ
-        from modules.storage.models import Seller
-
         # When: Sellerインスタンスを作成
         seller = Seller(
             seller_name="セラーA",
@@ -56,8 +54,6 @@ class TestSellerModel:
     def test_seller_is_anime_seller_false(self):
         """T003: 正常系 - is_anime_seller=Falseの非二次創作セラー."""
         # Given: アニメ判定がFalseのデータ
-        from modules.storage.models import Seller
-
         # When: Sellerインスタンスを作成
         seller = Seller(
             seller_name="セラーB",
@@ -73,8 +69,6 @@ class TestSellerModel:
     def test_seller_empty_product_titles(self):
         """T004: 境界値 - product_titlesが空リスト."""
         # Given: product_titlesが空のデータ
-        from modules.storage.models import Seller
-
         # When: Sellerインスタンスを作成
         seller = Seller(
             seller_name="セラーC",
@@ -89,8 +83,6 @@ class TestSellerModel:
     def test_seller_total_price_boundary_minimum(self):
         """T005: 境界値 - total_priceが最小値(10万円)."""
         # Given: total_priceが10万円のデータ
-        from modules.storage.models import Seller
-
         # When: Sellerインスタンスを作成
         seller = Seller(
             seller_name="セラーD",
@@ -109,8 +101,6 @@ class TestProductModel:
     def test_product_instantiation_normal(self):
         """T006: 正常系 - 全フィールドが正しく設定されたProductインスタンス作成."""
         # Given: 有効なデータ
-        from modules.storage.models import Product
-
         # When: Productインスタンスを作成
         product = Product(
             title="らんまちゃん らんま A4 ポスター 同人 アニメ イラスト 美女 E017621",
@@ -124,8 +114,6 @@ class TestProductModel:
     def test_product_empty_title(self):
         """T007: 境界値 - titleが空文字列."""
         # Given: titleが空文字列のデータ
-        from modules.storage.models import Product
-
         # When: Productインスタンスを作成
         product = Product(
             title="",
@@ -138,8 +126,6 @@ class TestProductModel:
     def test_product_empty_seller_name(self):
         """T008: 境界値 - seller_nameが空文字列."""
         # Given: seller_nameが空文字列のデータ
-        from modules.storage.models import Product
-
         # When: Productインスタンスを作成
         product = Product(
             title="商品タイトル",
