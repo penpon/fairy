@@ -96,11 +96,14 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
      - テスト失敗 → `claude-test-fix.yml` が自動修正
      - 修正後は自動コミット&Push
 
-3. **PR監視&マージ**（`/party`）
-   - PR ステータス定期確認
-   - CI/CD パス後に自動マージ
-   - develop ブランチ更新（git pull）
-   - worktree 削除
+3. **PR監視&マージ&クリーンアップ**
+   - PRステータス確認（GitHub Web UI）
+   - CI/CDパス & レビュー承認後にマージ
+   - **`/sync` コマンド実行**（推奨）
+     - マージ済みPRのworktreeを安全に削除
+     - developブランチ自動更新（git pull）
+     - ユーザー確認付き削除（安全性重視）
+   - または手動: `git checkout develop && git pull` → worktree削除
 
 **ワークフロー チェックリスト（参考）**
 
@@ -110,8 +113,9 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 - [ ] 3. `/rabbit-rocket` でレビュー&PR作成
 - [ ] 4. GitHub自動レビュー（CodeRabbit/Copilot）
 - [ ] 5. GitHub自動修正（必要時）
-- [ ] 6. `/party` でPR監視&マージ
-- [ ] 7. 全タスク完了後、developをmainにマージ（手動）
+- [ ] 6. PRマージ確認（手動）
+- [ ] 7. `/sync` でworktreeクリーンアップ & develop更新
+- [ ] 8. 全タスク完了後、developをmainにマージ（手動）
 
 **Commit Message Format（日本語）**
 ```
