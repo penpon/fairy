@@ -10,7 +10,7 @@
   - _Leverage: Python dataclasses（標準ライブラリ）_
   - _Requirements: Requirement 2 (Yahoo Auctionsセラーページからの商品名取得), Requirement 3 (中間CSVエクスポート)_
   - _Prompt: Implement the task for spec seller-data-collection-analysis, first run spec-workflow-guide to get the workflow guide then implement the task: Role: Python Developer specializing in data modeling and type safety | Task: Create comprehensive dataclass definitions for Seller and Product models following requirements 2 and 3 from .spec-workflow/specs/seller-data-collection-analysis/requirements.md. Define type-safe data structures with proper field validation. | Restrictions: Use Python 3.12+ type hints (list[str], bool | None), Do not add methods to dataclasses (pure data containers), Follow naming conventions from structure.md (snake_case for fields), Do not use mutable default values | Leverage: Python dataclasses standard library, Type hints for all fields | Requirements: Requirement 2 (Yahoo Auctionsセラーページからの商品名取得), Requirement 3 (中間CSVエクスポート) | Success: Seller dataclass with fields: seller_name, seller_url, total_price, product_titles, is_anime_seller, Product dataclass with fields: title, seller_name, All fields have proper type annotations, Compiles without type errors (mypy check passes), Follows structure.md naming conventions | Instructions: Before starting implementation, mark this task as in-progress ([-]) in tasks.md. After completing implementation, mark as completed ([x]) in tasks.md._
-- [-] 2. 設定ファイル作成 (constants.py)
+- [x] 2. 設定ファイル作成 (constants.py)
   - File: `modules/config/constants.py`
   - Purpose: 定数定義（MAX_PRODUCTS_PER_SELLER, MIN_SELLER_PRICE等）
   - _Leverage: Python標準ライブラリ_
