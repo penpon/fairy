@@ -6,8 +6,6 @@ Requirements:
 - Non-Functional Requirements (Testability - 95% coverage)
 """
 
-import pytest
-
 from modules.storage.models import Product, Seller
 
 
@@ -134,3 +132,144 @@ class TestProductModel:
 
         # Then: seller_nameが空文字列になる
         assert product.seller_name == ""
+
+
+class TestSellerModelErrorCases:
+    """Test Seller dataclass error cases."""
+
+    def test_seller_none_seller_name(self):
+        """T009: 異常系 - seller_nameがNone."""
+        # Given: seller_nameがNoneのデータ
+        # When: Sellerインスタンスを作成
+        seller = Seller(
+            seller_name=None,
+            seller_url="https://example.com",
+            total_price=100000,
+            product_titles=[],
+        )
+
+        # Then: seller_nameがNoneで作成される（型安全性違反）
+        assert seller.seller_name is None
+
+    def test_seller_none_seller_url(self):
+        """T010: 異常系 - seller_urlがNone."""
+        # Given: seller_urlがNoneのデータ
+        # When: Sellerインスタンスを作成
+        seller = Seller(
+            seller_name="テストセラー",
+            seller_url=None,
+            total_price=100000,
+            product_titles=[],
+        )
+
+        # Then: seller_urlがNoneで作成される（型安全性違反）
+        assert seller.seller_url is None
+
+    def test_seller_none_product_titles(self):
+        """T011: 異常系 - product_titlesがNone."""
+        # Given: product_titlesがNoneのデータ
+        # When: Sellerインスタンスを作成
+        seller = Seller(
+            seller_name="テストセラー",
+            seller_url="https://example.com",
+            total_price=100000,
+            product_titles=None,
+        )
+
+        # Then: product_titlesがNoneで作成される（型安全性違反）
+        assert seller.product_titles is None
+
+    def test_seller_invalid_total_price_type(self):
+        """T012: 異常系 - total_priceが文字列."""
+        # Given: total_priceが文字列のデータ
+        # When: Sellerインスタンスを作成
+        seller = Seller(
+            seller_name="テストセラー",
+            seller_url="https://example.com",
+            total_price="invalid",
+            product_titles=[],
+        )
+
+        # Then: total_priceが文字列で作成される（型安全性違反）
+        assert seller.total_price == "invalid"
+
+    def test_seller_negative_total_price(self):
+        """T013: 異常系 - total_priceが負の値."""
+        # Given: total_priceが負の値のデータ
+        # When: Sellerインスタンスを作成
+        seller = Seller(
+            seller_name="テストセラー",
+            seller_url="https://example.com",
+            total_price=-1000,
+            product_titles=[],
+        )
+
+        # Then: total_priceが負の値で作成される（ビジネスロジック違反）
+        assert seller.total_price == -1000
+
+    def test_seller_invalid_is_anime_seller_type(self):
+        """T014: 異常系 - is_anime_sellerが文字列."""
+        # Given: is_anime_sellerが文字列のデータ
+        # When: Sellerインスタンスを作成
+        seller = Seller(
+            seller_name="テストセラー",
+            seller_url="https://example.com",
+            total_price=100000,
+            product_titles=[],
+            is_anime_seller="invalid",
+        )
+
+        # Then: is_anime_sellerが文字列で作成される（型安全性違反）
+        assert seller.is_anime_seller == "invalid"
+
+
+class TestProductModelErrorCases:
+    """Test Product dataclass error cases."""
+
+    def test_product_none_title(self):
+        """T015: 異常系 - titleがNone."""
+        # Given: titleがNoneのデータ
+        # When: Productインスタンスを作成
+        product = Product(
+            title=None,
+            seller_name="テストセラー",
+        )
+
+        # Then: titleがNoneで作成される（型安全性違反）
+        assert product.title is None
+
+    def test_product_none_seller_name(self):
+        """T016: 異常系 - seller_nameがNone."""
+        # Given: seller_nameがNoneのデータ
+        # When: Productインスタンスを作成
+        product = Product(
+            title="テスト商品",
+            seller_name=None,
+        )
+
+        # Then: seller_nameがNoneで作成される（型安全性違反）
+        assert product.seller_name is None
+
+    def test_product_invalid_title_type(self):
+        """T017: 異常系 - titleが数値."""
+        # Given: titleが数値のデータ
+        # When: Productインスタンスを作成
+        product = Product(
+            title=12345,
+            seller_name="テストセラー",
+        )
+
+        # Then: titleが数値で作成される（型安全性違反）
+        assert product.title == 12345
+
+    def test_product_invalid_seller_name_type(self):
+        """T018: 異常系 - seller_nameがリスト."""
+        # Given: seller_nameがリストのデータ
+        # When: Productインスタンスを作成
+        product = Product(
+            title="テスト商品",
+            seller_name=["セラーA", "セラーB"],
+        )
+
+        # Then: seller_nameがリストで作成される（型安全性違反）
+        assert product.seller_name == ["セラーA", "セラーB"]
