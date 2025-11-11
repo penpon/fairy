@@ -69,7 +69,7 @@ jobs:
               [コミットのSHA]
               ```
 
-          claude_args: '--allowed-tools "Bash(gh pr:*),Bash(git:*)"'
+          claude_args: '--allowed-tools "Bash(gh pr:*),Bash(git:*),Read,Edit,Write,Grep,Glob"'
 
       - name: Post fix summary as comment
         if: always() && steps.claude-fix.conclusion != 'skipped'
