@@ -4,8 +4,6 @@ Test suite for modules.config.constants
 Tests verify that all application constants are defined with correct values.
 """
 
-import pytest
-
 
 class TestConstants:
     """Test constants.py module"""
@@ -74,11 +72,11 @@ class TestConstants:
         """
         Given: constants module
         When: RETRY_BACKOFF_SECONDS is imported
-        Then: it should equal [1, 2, 4]
+        Then: it should equal (1, 2, 4)
         """
         from modules.config.constants import RETRY_BACKOFF_SECONDS
 
-        assert RETRY_BACKOFF_SECONDS == [1, 2, 4]
+        assert RETRY_BACKOFF_SECONDS == (1, 2, 4)
 
     def test_constants_are_immutable_types(self):
         """
@@ -88,12 +86,12 @@ class TestConstants:
         """
         from modules.config.constants import (
             MAX_PRODUCTS_PER_SELLER,
-            MIN_SELLER_PRICE,
             MAX_RETRY_ATTEMPTS,
-            YAHOO_PROXY,
+            MIN_SELLER_PRICE,
             RAPRAS_BASE_URL,
             RAPRAS_SUM_ANALYSE_PATH,
             RETRY_BACKOFF_SECONDS,
+            YAHOO_PROXY,
         )
 
         # Check immutable types
@@ -103,8 +101,8 @@ class TestConstants:
         assert isinstance(YAHOO_PROXY, str)
         assert isinstance(RAPRAS_BASE_URL, str)
         assert isinstance(RAPRAS_SUM_ANALYSE_PATH, str)
-        # RETRY_BACKOFF_SECONDS should be a list (mutable, but acceptable for constants)
-        assert isinstance(RETRY_BACKOFF_SECONDS, list)
+        # RETRY_BACKOFF_SECONDS should be a tuple (immutable)
+        assert isinstance(RETRY_BACKOFF_SECONDS, tuple)
 
     def test_retry_backoff_seconds_length(self):
         """
@@ -176,3 +174,56 @@ class TestConstants:
 
         # Verify path format
         assert RAPRAS_SUM_ANALYSE_PATH.startswith("/")
+
+    def test_retry_backoff_seconds_immutability(self):
+        """
+        Given: RETRY_BACKOFF_SECONDS constant
+        When: attempting to modify the constant
+        Then: TypeError should be raised (tuple is immutable)
+        """
+        import pytest
+
+        from modules.config.constants import RETRY_BACKOFF_SECONDS
+
+        with pytest.raises(TypeError):
+            RETRY_BACKOFF_SECONDS[0] = 10  # type: ignore
+
+    def test_max_products_boundary_positive(self):
+        """
+        Given: constants module
+        When: MAX_PRODUCTS_PER_SELLER is checked
+        Then: it should be positive (greater than zero)
+        """
+        from modules.config.constants import MAX_PRODUCTS_PER_SELLER
+
+        assert MAX_PRODUCTS_PER_SELLER > 0
+
+    def test_max_retry_attempts_boundary_positive(self):
+        """
+        Given: constants module
+        When: MAX_RETRY_ATTEMPTS is checked
+        Then: it should be positive (greater than zero)
+        """
+        from modules.config.constants import MAX_RETRY_ATTEMPTS
+
+        assert MAX_RETRY_ATTEMPTS > 0
+
+    def test_min_seller_price_boundary_positive(self):
+        """
+        Given: constants module
+        When: MIN_SELLER_PRICE is checked
+        Then: it should be positive (greater than zero)
+        """
+        from modules.config.constants import MIN_SELLER_PRICE
+
+        assert MIN_SELLER_PRICE > 0
+
+    def test_retry_backoff_seconds_all_positive(self):
+        """
+        Given: constants module
+        When: RETRY_BACKOFF_SECONDS is checked
+        Then: all values should be positive
+        """
+        from modules.config.constants import RETRY_BACKOFF_SECONDS
+
+        assert all(value > 0 for value in RETRY_BACKOFF_SECONDS)
