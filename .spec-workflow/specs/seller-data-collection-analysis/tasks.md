@@ -4,7 +4,7 @@
 
 ### Phase 1: Foundation - Configuration & Utilities
 
-- [ ] 1. データモデル定義
+- [x] 1. データモデル定義
   - File: `modules/storage/models.py`
   - Purpose: Seller/Productのデータクラス定義
   - _Leverage: Python dataclasses（標準ライブラリ）_
