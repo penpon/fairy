@@ -1,13 +1,24 @@
 import sqlite3
 
-def get_user_data(user_id):
-    # SQL Injection脆弱性のある関数
-    conn = sqlite3.connect("users.db")
-    cursor = conn.cursor()
 
-    # 危険: ユーザー入力を直接SQLに埋め込んでいる
-    query = f"SELECT * FROM users WHERE id = {user_id}"
-    cursor.execute(query)
+def get_user_data(user_id: int) -> list[tuple]:
+    """指定されたユーザーIDのデータを取得します。
 
-    result = cursor.fetchall()
-    return result
+    Args:
+        user_id: 取得するユーザーのID
+
+    Returns:
+        ユーザーデータのタプルのリスト
+
+    Raises:
+        sqlite3.Error: データベース操作でエラーが発生した場合
+    """
+    with sqlite3.connect("users.db") as conn:
+        cursor = conn.cursor()
+
+        # 安全: パラメータ化クエリを使用
+        query = "SELECT * FROM users WHERE id = ?"
+        cursor.execute(query, (user_id,))
+
+        result = cursor.fetchall()
+        return result
