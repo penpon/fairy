@@ -2,6 +2,7 @@
   "reviews": {
     "enabled": true,
     "request_changes": true,
+    "target_branches": ["main", "develop"],
     "auto_review": true,
     "auto_fix": true,
     "exclude_patterns": [
