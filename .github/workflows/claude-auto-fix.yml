@@ -6,9 +6,10 @@ on:
 
 jobs:
   auto-fix:
-    # Only run when CodeRabbit submits a review
-    # Note: Copilot reviews require manual approval due to GitHub security settings
-    if: github.event.review.user.login == 'coderabbitai[bot]'
+    # Only run when Copilot or CodeRabbit submits a review
+    if: |
+      github.event.review.user.login == 'copilot-pull-request-reviewer[bot]' ||
+      github.event.review.user.login == 'coderabbitai[bot]'
 
     runs-on: ubuntu-latest
     permissions:
@@ -31,7 +32,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          allowed_bots: 'coderabbitai[bot]'
+          allowed_bots: 'copilot-pull-request-reviewer[bot],coderabbitai[bot]'
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
