@@ -56,11 +56,11 @@ def get_logger(name: str) -> logging.Logger:
 
     # LOG_DIRのバリデーション
     try:
-        log_dir = Path(log_dir_env).resolve()
-
-        # 空のパスや不正なパスを拒否
+        # 空のパスや不正なパスを拒否（Path.resolve()の前に検証）
         if not log_dir_env or log_dir_env.strip() == "":
             raise ValueError("LOG_DIR cannot be empty")
+
+        log_dir = Path(log_dir_env).resolve()
 
         # ディレクトリ作成とファイルハンドラの設定
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -73,6 +73,6 @@ def get_logger(name: str) -> logging.Logger:
 
     except (OSError, PermissionError, ValueError) as e:
         # ファイルログの初期化に失敗した場合はコンソールのみにフォールバック
-        logger.warning(f"Failed to initialize file logging: {e}. Using console-only output.")
+        logger.warning(f"ファイルログの初期化に失敗しました: {e}。コンソール出力のみを使用します。")
 
     return logger
