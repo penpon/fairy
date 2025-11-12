@@ -45,7 +45,7 @@ flowchart LR
         direction TB
         GH_Test[Phase3と同じ品質チェック<br/>Black/Ruff/pytest/Coverage/bandit/pip-audit] --> GH_Review[CodeRabbit & Copilot<br/>自動レビュー]
         GH_Review --> GH_Fix{テスト失敗?}
-        GH_Fix -->|Yes| GH_Claude[\@Claudeメンションでコード修正]
+        GH_Fix -->|Yes| GH_Claude[Claudeメンションでコード修正]
         GH_Claude --> GH_Test
         GH_Fix -->|No| GH_Merge[マージ可能]
     end
