@@ -30,7 +30,7 @@
   - _Prompt: Implement the task for spec seller-data-collection-analysis, first run spec-workflow-guide to get the workflow guide then implement the task: Role: Python Developer specializing in logging and observability | Task: Configure structured logging with INFO/WARNING/ERROR levels following Non-Functional Requirements from .spec-workflow/specs/seller-data-collection-analysis/requirements.md. Provide Japanese error messages for user-friendliness. | Restrictions: Use Python logging standard library only, Do not use print() for logging, Ensure thread-safe logging, Log format must include timestamp, level, module name | Leverage: Python logging standard library, logging.basicConfig for setup | Requirements: Non-Functional Requirements (Usability - Logging) | Success: get_logger() function returns configured logger, Log format: "[YYYY-MM-DD HH:MM:SS] LEVEL - module - message", INFO level for normal operations, WARNING for recoverable issues, ERROR for critical failures, Japanese error messages supported, Log to both console and file (logs/app.log) | Instructions: Before starting implementation, mark this task as in-progress ([-]) in tasks.md. After completing implementation, mark as completed ([x]) in tasks.md._
 ### Phase 2: Scraper Layer
 
-- [-] 5. RaprasScraper実装
+- [x] 5. RaprasScraper実装
   - File: `modules/scraper/rapras_scraper.py`
   - Purpose: Rapras集計ページからセラーリンクを取得
   - _Leverage: Playwright (async API), modules.config.settings, modules.utils.logger_
