@@ -81,7 +81,7 @@ class TestLogger:
         logger = get_logger("test_info_output")
 
         # When: INFOログを出力
-        with caplog.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO, logger="test_info_output"):
             logger.info("Test info message")
 
         # Then: ログが記録される
@@ -94,7 +94,7 @@ class TestLogger:
         logger = get_logger("test_warning_output")
 
         # When: WARNINGログを出力
-        with caplog.at_level(logging.WARNING):
+        with caplog.at_level(logging.WARNING, logger="test_warning_output"):
             logger.warning("Test warning message")
 
         # Then: ログが記録される
@@ -107,7 +107,7 @@ class TestLogger:
         logger = get_logger("test_error_output")
 
         # When: ERRORログを出力
-        with caplog.at_level(logging.ERROR):
+        with caplog.at_level(logging.ERROR, logger="test_error_output"):
             logger.error("Test error message")
 
         # Then: ログが記録される
@@ -136,7 +136,7 @@ class TestLogger:
 
         # When: センシティブデータを含むログメッセージ（良い例）
         # センシティブデータ（例: "test_user"）を直接ログに出力しない
-        with caplog.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO, logger="test_sensitive"):
             logger.info("User authentication successful")  # センシティブデータを含まない
 
         # Then: ログにセンシティブデータが含まれない
@@ -160,7 +160,7 @@ class TestLogger:
         logger = get_logger("test_timestamp")
 
         # When: ログを出力
-        with caplog.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO, logger="test_timestamp"):
             logger.info("Test message with timestamp")
 
         # Then: ログレコードにタイムスタンプ情報が含まれる
@@ -176,7 +176,7 @@ class TestLogger:
         logger = get_logger(module_name)
 
         # When: ログを出力
-        with caplog.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO, logger="test_module_name"):
             logger.info("Test message")
 
         # Then: ログレコードにモジュール名が含まれる
@@ -243,7 +243,7 @@ class TestLogger:
         # When: Loggerを取得してログを出力
         logger = get_logger("test_both_output")
         try:
-            with caplog.at_level(logging.INFO):
+            with caplog.at_level(logging.INFO, logger="test_both_output"):
                 logger.info("Test both outputs")
 
             # Then: コンソールにログが出力される
