@@ -106,6 +106,63 @@ class TestRaprasConfigWithDotenv:
         assert config.username == "env_user"
         assert config.password == "env_pass"
 
+    def test_load_rapras_config_missing_username(self, tmp_path, monkeypatch):
+        """異常系: RAPRAS_USERNAMEが未設定の場合、ValueErrorが発生することを確認"""
+        # Given: .envファイルにRAPRAS_PASSWORDのみが設定されている
+        env_file = tmp_path / ".env"
+        env_file.write_text("RAPRAS_PASSWORD=test_pass\n")
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("RAPRAS_USERNAME", raising=False)
+        monkeypatch.delenv("RAPRAS_PASSWORD", raising=False)
+
+        # When: load_dotenv_file()を呼び出してから設定をロード
+        load_dotenv_file()
+
+        # Then: ValueErrorが発生する
+        with pytest.raises(ValueError) as exc_info:
+            load_rapras_config()
+
+        # Then: エラーメッセージが適切
+        assert "RAPRAS_USERNAME environment variable is not set" in str(exc_info.value)
+
+    def test_load_rapras_config_missing_password(self, tmp_path, monkeypatch):
+        """異常系: RAPRAS_PASSWORDが未設定の場合、ValueErrorが発生することを確認"""
+        # Given: .envファイルにRAPRAS_USERNAMEのみが設定されている
+        env_file = tmp_path / ".env"
+        env_file.write_text("RAPRAS_USERNAME=test_user\n")
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("RAPRAS_USERNAME", raising=False)
+        monkeypatch.delenv("RAPRAS_PASSWORD", raising=False)
+
+        # When: load_dotenv_file()を呼び出してから設定をロード
+        load_dotenv_file()
+
+        # Then: ValueErrorが発生する
+        with pytest.raises(ValueError) as exc_info:
+            load_rapras_config()
+
+        # Then: エラーメッセージが適切
+        assert "RAPRAS_PASSWORD environment variable is not set" in str(exc_info.value)
+
+    def test_load_rapras_config_empty_username(self, tmp_path, monkeypatch):
+        """異常系: RAPRAS_USERNAMEが空文字列の場合、ValueErrorが発生することを確認"""
+        # Given: .envファイルにRAPRAS_USERNAMEが空文字列で設定されている
+        env_file = tmp_path / ".env"
+        env_file.write_text("RAPRAS_USERNAME=\nRAPRAS_PASSWORD=test_pass\n")
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("RAPRAS_USERNAME", raising=False)
+        monkeypatch.delenv("RAPRAS_PASSWORD", raising=False)
+
+        # When: load_dotenv_file()を呼び出してから設定をロード
+        load_dotenv_file()
+
+        # Then: ValueErrorが発生する
+        with pytest.raises(ValueError) as exc_info:
+            load_rapras_config()
+
+        # Then: エラーメッセージが適切
+        assert "RAPRAS_USERNAME environment variable is not set" in str(exc_info.value)
+
 
 class TestYahooConfigWithDotenv:
     """YahooConfig with python-dotenvのテストクラス"""
@@ -124,6 +181,42 @@ class TestYahooConfigWithDotenv:
         # Then: 正しい設定が返される
         assert isinstance(config, YahooConfig)
         assert config.phone_number == "09012345678"
+
+    def test_load_yahoo_config_missing_phone_number(self, tmp_path, monkeypatch):
+        """異常系: YAHOO_PHONE_NUMBERが未設定の場合、ValueErrorが発生することを確認"""
+        # Given: .envファイルが存在するがYAHOO_PHONE_NUMBERが設定されていない
+        env_file = tmp_path / ".env"
+        env_file.write_text("")
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("YAHOO_PHONE_NUMBER", raising=False)
+
+        # When: load_dotenv_file()を呼び出してから設定をロード
+        load_dotenv_file()
+
+        # Then: ValueErrorが発生する
+        with pytest.raises(ValueError) as exc_info:
+            load_yahoo_config()
+
+        # Then: エラーメッセージが適切
+        assert "YAHOO_PHONE_NUMBER environment variable is not set" in str(exc_info.value)
+
+    def test_load_yahoo_config_empty_phone_number(self, tmp_path, monkeypatch):
+        """異常系: YAHOO_PHONE_NUMBERが空文字列の場合、ValueErrorが発生することを確認"""
+        # Given: .envファイルにYAHOO_PHONE_NUMBERが空文字列で設定されている
+        env_file = tmp_path / ".env"
+        env_file.write_text("YAHOO_PHONE_NUMBER=\n")
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("YAHOO_PHONE_NUMBER", raising=False)
+
+        # When: load_dotenv_file()を呼び出してから設定をロード
+        load_dotenv_file()
+
+        # Then: ValueErrorが発生する
+        with pytest.raises(ValueError) as exc_info:
+            load_yahoo_config()
+
+        # Then: エラーメッセージが適切
+        assert "YAHOO_PHONE_NUMBER environment variable is not set" in str(exc_info.value)
 
 
 class TestProxyConfigWithDotenv:
@@ -149,6 +242,92 @@ class TestProxyConfigWithDotenv:
         assert config.url == "http://proxy.example.com:3128"
         assert config.username == "proxy_user"
         assert config.password == "proxy_pass"
+
+    def test_load_proxy_config_missing_url(self, tmp_path, monkeypatch):
+        """異常系: PROXY_URLが未設定の場合、ValueErrorが発生することを確認"""
+        # Given: .envファイルにPROXY_URLが設定されていない
+        env_file = tmp_path / ".env"
+        env_file.write_text("PROXY_USERNAME=proxy_user\nPROXY_PASSWORD=proxy_pass\n")
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("PROXY_URL", raising=False)
+        monkeypatch.delenv("PROXY_USERNAME", raising=False)
+        monkeypatch.delenv("PROXY_PASSWORD", raising=False)
+
+        # When: load_dotenv_file()を呼び出してから設定をロード
+        load_dotenv_file()
+
+        # Then: ValueErrorが発生する
+        with pytest.raises(ValueError) as exc_info:
+            load_proxy_config()
+
+        # Then: エラーメッセージが適切
+        assert "PROXY_URL environment variable is not set" in str(exc_info.value)
+
+    def test_load_proxy_config_missing_username(self, tmp_path, monkeypatch):
+        """異常系: PROXY_USERNAMEが未設定の場合、ValueErrorが発生することを確認"""
+        # Given: .envファイルにPROXY_USERNAMEが設定されていない
+        env_file = tmp_path / ".env"
+        env_file.write_text(
+            "PROXY_URL=http://proxy.example.com:3128\nPROXY_PASSWORD=proxy_pass\n"
+        )
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("PROXY_URL", raising=False)
+        monkeypatch.delenv("PROXY_USERNAME", raising=False)
+        monkeypatch.delenv("PROXY_PASSWORD", raising=False)
+
+        # When: load_dotenv_file()を呼び出してから設定をロード
+        load_dotenv_file()
+
+        # Then: ValueErrorが発生する
+        with pytest.raises(ValueError) as exc_info:
+            load_proxy_config()
+
+        # Then: エラーメッセージが適切
+        assert "PROXY_USERNAME environment variable is not set" in str(exc_info.value)
+
+    def test_load_proxy_config_missing_password(self, tmp_path, monkeypatch):
+        """異常系: PROXY_PASSWORDが未設定の場合、ValueErrorが発生することを確認"""
+        # Given: .envファイルにPROXY_PASSWORDが設定されていない
+        env_file = tmp_path / ".env"
+        env_file.write_text(
+            "PROXY_URL=http://proxy.example.com:3128\nPROXY_USERNAME=proxy_user\n"
+        )
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("PROXY_URL", raising=False)
+        monkeypatch.delenv("PROXY_USERNAME", raising=False)
+        monkeypatch.delenv("PROXY_PASSWORD", raising=False)
+
+        # When: load_dotenv_file()を呼び出してから設定をロード
+        load_dotenv_file()
+
+        # Then: ValueErrorが発生する
+        with pytest.raises(ValueError) as exc_info:
+            load_proxy_config()
+
+        # Then: エラーメッセージが適切
+        assert "PROXY_PASSWORD environment variable is not set" in str(exc_info.value)
+
+    def test_load_proxy_config_empty_url(self, tmp_path, monkeypatch):
+        """異常系: PROXY_URLが空文字列の場合、ValueErrorが発生することを確認"""
+        # Given: .envファイルにPROXY_URLが空文字列で設定されている
+        env_file = tmp_path / ".env"
+        env_file.write_text(
+            "PROXY_URL=\nPROXY_USERNAME=proxy_user\nPROXY_PASSWORD=proxy_pass\n"
+        )
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("PROXY_URL", raising=False)
+        monkeypatch.delenv("PROXY_USERNAME", raising=False)
+        monkeypatch.delenv("PROXY_PASSWORD", raising=False)
+
+        # When: load_dotenv_file()を呼び出してから設定をロード
+        load_dotenv_file()
+
+        # Then: ValueErrorが発生する
+        with pytest.raises(ValueError) as exc_info:
+            load_proxy_config()
+
+        # Then: エラーメッセージが適切
+        assert "PROXY_URL environment variable is not set" in str(exc_info.value)
 
 
 class TestIntegration:
