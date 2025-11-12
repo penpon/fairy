@@ -276,8 +276,9 @@ class RaprasScraper:
 
         try:
             # 集計ページURL
+            base_url = self.rapras_url.rstrip("/")
             url = (
-                f"{self.rapras_url}sum_analyse"
+                f"{base_url}/sum_analyse"
                 f"?target=epsum&updown=down&genre=all"
                 f"&sdate={start_date}&edate={end_date}"
             )
