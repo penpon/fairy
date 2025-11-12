@@ -76,7 +76,7 @@ class TestFetchSellerProducts:
         mock_product_elements = []
         for i in range(12):
             mock_element = AsyncMock()
-            mock_element.text_content.return_value = f"商品タイトル {i+1}"
+            mock_element.text_content.return_value = f"商品タイトル {i + 1}"
             mock_product_elements.append(mock_element)
 
         mock_page.query_selector_all.return_value = mock_product_elements
@@ -113,7 +113,7 @@ class TestFetchSellerProducts:
         mock_product_elements = []
         for i in range(8):
             mock_element = AsyncMock()
-            mock_element.text_content.return_value = f"商品 {i+1}"
+            mock_element.text_content.return_value = f"商品 {i + 1}"
             mock_product_elements.append(mock_element)
 
         mock_page.query_selector_all.return_value = mock_product_elements
@@ -201,7 +201,7 @@ class TestFetchSellerProducts:
         mock_product_elements = []
         for i in range(12):
             mock_element = AsyncMock()
-            mock_element.text_content.return_value = f"商品 {i+1}"
+            mock_element.text_content.return_value = f"商品 {i + 1}"
             mock_product_elements.append(mock_element)
 
         mock_page.query_selector_all.return_value = mock_product_elements
@@ -306,7 +306,7 @@ class TestFetchSellerProducts:
         mock_product_elements = []
         for i in range(10):
             mock_element = AsyncMock()
-            mock_element.text_content.return_value = f"商品 {i+1}"
+            mock_element.text_content.return_value = f"商品 {i + 1}"
             mock_product_elements.append(mock_element)
 
         mock_page.query_selector_all.return_value = mock_product_elements
@@ -341,7 +341,7 @@ class TestFetchSellerProducts:
         mock_product_elements = []
         for i in range(20):
             mock_element = AsyncMock()
-            mock_element.text_content.return_value = f"商品 {i+1}"
+            mock_element.text_content.return_value = f"商品 {i + 1}"
             mock_product_elements.append(mock_element)
 
         mock_page.query_selector_all.return_value = mock_product_elements

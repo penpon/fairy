@@ -590,7 +590,9 @@ class YahooAuctionScraper:
                     await asyncio.sleep(delay)
 
         # すべてのリトライが失敗した
-        error_msg = f"Yahoo Auctionsへの接続が{self._max_retries}回のリトライ後も失敗しました: {seller_url}"
+        error_msg = (
+            f"Yahoo Auctionsへの接続が{self._max_retries}回のリトライ後も失敗しました: {seller_url}"
+        )
         raise ConnectionError(error_msg) from last_exception
 
     async def _extract_seller_name(self) -> str:
