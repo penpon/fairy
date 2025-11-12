@@ -112,9 +112,9 @@ class AnimeFilter:
         except subprocess.CalledProcessError as e:
             logger.error(f"Gemini CLI execution failed for '{extracted_title}': {e.stderr}")
             raise GeminiAPIError(f"Gemini CLI execution failed: {e.stderr}") from e
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as e:
             logger.error(f"Gemini CLI timeout for '{extracted_title}'")
-            raise GeminiAPIError(f"Gemini CLI timeout after 30 seconds")
+            raise GeminiAPIError("Gemini CLI timeout after 30 seconds") from e
 
     def filter_sellers(self, sellers: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Filter sellers and mark anime sellers.
