@@ -264,8 +264,25 @@ class RaprasScraper:
             logger.info(f"Fetching seller links from {url}")
             await self.page.goto(url, timeout=self._timeout)
 
-            # セラーテーブルの行を取得
-            rows = await self.page.query_selector_all("table tbody tr")
+            # セラーテーブルを特定してから行を取得
+            # まず、2列目にリンク（a要素）を持つ最初のテーブルを探す
+            tables = await self.page.query_selector_all("table")
+            seller_table = None
+            for table in tables:
+                # テーブルの最初の行に2列目のリンクがあるかチェック
+                first_row = await table.query_selector("tbody tr")
+                if first_row:
+                    link_elem = await first_row.query_selector("td:nth-child(2) a")
+                    if link_elem:
+                        seller_table = table
+                        break
+
+            if not seller_table:
+                logger.warning("Seller table not found")
+                return []
+
+            # 特定したテーブルから行を取得
+            rows = await seller_table.query_selector_all("tbody tr")
             logger.info(f"Found {len(rows)} seller rows")
 
             sellers = []

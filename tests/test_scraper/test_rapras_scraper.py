@@ -324,7 +324,29 @@ class TestRaprasScraper:
 
         mock_row2.query_selector = row2_query_selector
 
-        mock_page.query_selector_all.return_value = [mock_row1, mock_row2]
+        # テーブルのモックを作成
+        mock_table = MagicMock()
+
+        async def table_query_selector(sel):
+            if sel == "tbody tr":
+                return mock_row1
+            return None
+
+        async def table_query_selector_all(sel):
+            if sel == "tbody tr":
+                return [mock_row1, mock_row2]
+            return []
+
+        mock_table.query_selector = table_query_selector
+        mock_table.query_selector_all = table_query_selector_all
+
+        # pageのquery_selector_allはtablesとして呼ばれる
+        async def page_query_selector_all(sel):
+            if sel == "table":
+                return [mock_table]
+            return []
+
+        mock_page.query_selector_all = page_query_selector_all
 
         with patch(
             "modules.scraper.rapras_scraper.async_playwright",
@@ -412,7 +434,29 @@ class TestRaprasScraper:
 
         mock_row.query_selector = row_query_selector
 
-        mock_page.query_selector_all.return_value = [mock_row]
+        # テーブルのモックを作成
+        mock_table = MagicMock()
+
+        async def table_query_selector(sel):
+            if sel == "tbody tr":
+                return mock_row
+            return None
+
+        async def table_query_selector_all(sel):
+            if sel == "tbody tr":
+                return [mock_row]
+            return []
+
+        mock_table.query_selector = table_query_selector
+        mock_table.query_selector_all = table_query_selector_all
+
+        # pageのquery_selector_allはtablesとして呼ばれる
+        async def page_query_selector_all(sel):
+            if sel == "table":
+                return [mock_table]
+            return []
+
+        mock_page.query_selector_all = page_query_selector_all
 
         with patch(
             "modules.scraper.rapras_scraper.async_playwright",
