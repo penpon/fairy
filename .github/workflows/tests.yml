@@ -31,7 +31,7 @@ jobs:
 
     - name: 依存関係のインストール
       run: |
-        uv sync --extra dev
+        uv sync --group dev
 
     - name: ユニットテストの実行とカバレッジ確認
       run: |
@@ -95,7 +95,7 @@ jobs:
 
     - name: 依存関係のインストール
       run: |
-        uv sync --extra dev
+        uv sync --group dev
 
     - name: 静的解析とフォーマットチェック
       run: |
@@ -147,11 +147,7 @@ jobs:
 
     - name: 依存関係のインストール
       run: |
-        uv sync --extra dev
-
-    - name: セキュリティツールのインストール
-      run: |
-        uv pip install bandit pip-audit
+        uv sync --group dev
 
     - name: セキュリティチェック (bandit)
       run: |
