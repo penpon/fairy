@@ -320,7 +320,7 @@ class RaprasScraper:
                     price_elem = await row.query_selector("td:nth-child(5)")
                     if not price_elem:
                         continue
-                    price_text = await price_elem.inner_text()
+                    price_text = (await price_elem.inner_text()).strip()
 
                     # 価格文字列から数値を抽出（例: "150,000円" → 150000）
                     price_value = int(price_text.replace(",", "").replace("円", ""))
