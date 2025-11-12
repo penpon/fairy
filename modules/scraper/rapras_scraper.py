@@ -233,3 +233,86 @@ class RaprasScraper:
     async def _close_browser(self) -> None:
         """ブラウザセッションをクリーンアップ（内部用）"""
         await self.close()
+
+    async def fetch_seller_links(
+        self, start_date: str, end_date: str, min_price: int = 100000
+    ) -> list[dict]:
+        """集計ページからセラーリンクを取得
+
+        Args:
+            start_date: 開始日（YYYY-MM-DD）
+            end_date: 終了日（YYYY-MM-DD）
+            min_price: 最低落札価格合計（デフォルト10万円）
+
+        Returns:
+            list[dict]: [{"seller_name": str, "total_price": int, "link": str}]
+
+        Raises:
+            RuntimeError: ブラウザが初期化されていない場合
+        """
+        if not self.page:
+            raise RuntimeError("Browser not initialized. Call login() first.")
+
+        try:
+            # 集計ページURL
+            url = (
+                f"{self.rapras_url}sum_analyse"
+                f"?target=epsum&updown=down&genre=all"
+                f"&sdate={start_date}&edate={end_date}"
+            )
+
+            logger.info(f"Fetching seller links from {url}")
+            await self.page.goto(url, timeout=self._timeout)
+
+            # セラーテーブルの行を取得
+            rows = await self.page.query_selector_all("table tbody tr")
+            logger.info(f"Found {len(rows)} seller rows")
+
+            sellers = []
+            for row in rows:
+                try:
+                    # セラー名を取得（2列目）
+                    seller_name_elem = await row.query_selector("td:nth-child(2)")
+                    if not seller_name_elem:
+                        continue
+                    seller_name = await seller_name_elem.inner_text()
+
+                    # 落札価格合計を取得（5列目）
+                    price_elem = await row.query_selector("td:nth-child(5)")
+                    if not price_elem:
+                        continue
+                    price_text = await price_elem.inner_text()
+
+                    # 価格文字列から数値を抽出（例: "150,000円" → 150000）
+                    price_value = int(price_text.replace(",", "").replace("円", ""))
+
+                    # min_price未満はスキップ
+                    if price_value < min_price:
+                        logger.debug(
+                            f"Skipping seller {seller_name} (price: {price_value} < {min_price})"
+                        )
+                        continue
+
+                    # セラーリンクを取得
+                    link_elem = await row.query_selector("td:nth-child(2) a")
+                    if not link_elem:
+                        continue
+                    link = await link_elem.get_attribute("href")
+
+                    sellers.append(
+                        {"seller_name": seller_name, "total_price": price_value, "link": link}
+                    )
+
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"Failed to parse seller row: {e}")
+                    continue
+
+            logger.info(f"Collected {len(sellers)} sellers with price >= {min_price}")
+            return sellers
+
+        except TimeoutError as e:
+            logger.error(f"Timeout while fetching seller links: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Failed to fetch seller links: {e}")
+            raise

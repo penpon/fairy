@@ -282,3 +282,151 @@ class TestRaprasScraper:
 
             # Then: Falseが返される（例外は内部で処理される）
             assert result is False
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_success(self, rapras_scraper, mock_playwright):
+        """正常系: fetch_seller_linksが正常にセラーリンクを取得"""
+        # Given: ログイン済み、集計ページから10万円以上のセラーを取得
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()  # ログイン済み
+
+        # モックのセラーテーブル要素
+        mock_row1 = MagicMock()
+
+        # query_selectorをAsyncMockに変更
+        async def row1_query_selector(sel):
+            result_map = {
+                "td:nth-child(2)": AsyncMock(inner_text=AsyncMock(return_value="セラーA")),
+                "td:nth-child(5)": AsyncMock(inner_text=AsyncMock(return_value="150,000円")),
+                "td:nth-child(2) a": AsyncMock(
+                    get_attribute=AsyncMock(
+                        return_value="https://auctions.yahoo.co.jp/sellinglist/seller_a"
+                    )
+                ),
+            }
+            return result_map.get(sel)
+
+        mock_row1.query_selector = row1_query_selector
+
+        mock_row2 = MagicMock()
+
+        async def row2_query_selector(sel):
+            result_map = {
+                "td:nth-child(2)": AsyncMock(inner_text=AsyncMock(return_value="セラーB")),
+                "td:nth-child(5)": AsyncMock(inner_text=AsyncMock(return_value="80,000円")),
+                "td:nth-child(2) a": AsyncMock(
+                    get_attribute=AsyncMock(
+                        return_value="https://auctions.yahoo.co.jp/sellinglist/seller_b"
+                    )
+                ),
+            }
+            return result_map.get(sel)
+
+        mock_row2.query_selector = row2_query_selector
+
+        mock_page.query_selector_all.return_value = [mock_row1, mock_row2]
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            # ログイン
+            await rapras_scraper.login("test_user", "test_password")
+
+            # When: セラーリンクを取得
+            result = await rapras_scraper.fetch_seller_links(
+                start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+            )
+
+            # Then: 10万円以上のセラーのみ取得
+            assert len(result) == 1
+            assert result[0]["seller_name"] == "セラーA"
+            assert result[0]["total_price"] == 150000
+            assert result[0]["link"] == "https://auctions.yahoo.co.jp/sellinglist/seller_a"
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_empty(self, rapras_scraper, mock_playwright):
+        """境界値: 10万円以上のセラーが0件"""
+        # Given: すべてのセラーが10万円未満
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()  # ログイン済み
+
+        mock_row = MagicMock()
+
+        async def row_query_selector(sel):
+            result_map = {
+                "td:nth-child(2)": AsyncMock(inner_text=AsyncMock(return_value="セラーC")),
+                "td:nth-child(5)": AsyncMock(inner_text=AsyncMock(return_value="50,000円")),
+                "td:nth-child(2) a": AsyncMock(
+                    get_attribute=AsyncMock(
+                        return_value="https://auctions.yahoo.co.jp/sellinglist/seller_c"
+                    )
+                ),
+            }
+            return result_map.get(sel)
+
+        mock_row.query_selector = row_query_selector
+
+        mock_page.query_selector_all.return_value = [mock_row]
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+
+            # When: セラーリンクを取得
+            result = await rapras_scraper.fetch_seller_links(
+                start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+            )
+
+            # Then: 空のリスト
+            assert len(result) == 0
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_boundary_exact_min_price(
+        self, rapras_scraper, mock_playwright
+    ):
+        """境界値: total_priceが正確に10万円のセラー"""
+        # Given: total_priceが正確に100000円
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()
+
+        mock_row = MagicMock()
+
+        async def row_query_selector(sel):
+            result_map = {
+                "td:nth-child(2)": AsyncMock(inner_text=AsyncMock(return_value="セラーD")),
+                "td:nth-child(5)": AsyncMock(inner_text=AsyncMock(return_value="100,000円")),
+                "td:nth-child(2) a": AsyncMock(
+                    get_attribute=AsyncMock(
+                        return_value="https://auctions.yahoo.co.jp/sellinglist/seller_d"
+                    )
+                ),
+            }
+            return result_map.get(sel)
+
+        mock_row.query_selector = row_query_selector
+
+        mock_page.query_selector_all.return_value = [mock_row]
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+
+            # When: セラーリンクを取得
+            result = await rapras_scraper.fetch_seller_links(
+                start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+            )
+
+            # Then: 境界値（=100000）も含まれる
+            assert len(result) == 1
+            assert result[0]["total_price"] == 100000
+
+        await rapras_scraper.close()
