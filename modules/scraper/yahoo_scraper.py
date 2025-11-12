@@ -545,14 +545,12 @@ class YahooAuctionScraper:
         Raises:
             ConnectionError: プロキシ接続失敗（最大3回リトライ後）
         """
-        from modules.config.constants import MAX_RETRY_ATTEMPTS, RETRY_BACKOFF_SECONDS
-
         last_exception = None
 
-        for attempt in range(MAX_RETRY_ATTEMPTS):
+        for attempt in range(self._max_retries):
             try:
                 logger.info(
-                    f"Fetching seller products (attempt {attempt + 1}/{MAX_RETRY_ATTEMPTS}): {seller_url}"
+                    f"Fetching seller products (attempt {attempt + 1}/{self._max_retries}): {seller_url}"
                 )
 
                 # ブラウザ起動（プロキシ設定を含む）
@@ -586,13 +584,13 @@ class YahooAuctionScraper:
                 error_type = "Timeout" if isinstance(e, TimeoutError) else "Unexpected error"
                 logger.warning(f"{error_type} occurred: {e}")
 
-                if attempt < MAX_RETRY_ATTEMPTS - 1:
-                    delay = RETRY_BACKOFF_SECONDS[attempt]
+                if attempt < self._max_retries - 1:
+                    delay = self._retry_delays[attempt]
                     logger.info(f"Retrying in {delay} seconds...")
                     await asyncio.sleep(delay)
 
         # すべてのリトライが失敗した
-        error_msg = f"Yahoo Auctionsへの接続が3回のリトライ後も失敗しました: {seller_url}"
+        error_msg = f"Yahoo Auctionsへの接続が{self._max_retries}回のリトライ後も失敗しました: {seller_url}"
         raise ConnectionError(error_msg) from last_exception
 
     async def _extract_seller_name(self) -> str:

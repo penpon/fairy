@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from modules.config.constants import RETRY_BACKOFF_SECONDS
 from modules.scraper.session_manager import SessionManager
 from modules.scraper.yahoo_scraper import YahooAuctionScraper
 
@@ -221,8 +220,8 @@ class TestFetchSellerProducts:
             assert len(result["product_titles"]) == 12
             assert attempt_counter["count"] == 2
 
-            # Then: リトライ待機が呼ばれた（1秒待機）
-            mock_sleep.assert_called_once_with(RETRY_BACKOFF_SECONDS[0])
+            # Then: リトライ待機が呼ばれた（2秒待機）
+            mock_sleep.assert_called_once_with(2)
 
         # クリーンアップ
         await yahoo_scraper.close()
@@ -251,11 +250,11 @@ class TestFetchSellerProducts:
             # Then: エラーメッセージに「3回のリトライ失敗」が含まれる
             assert "3回のリトライ" in str(exc_info.value)
 
-            # Then: exponential backoffが実行された（1s, 2s）
+            # Then: exponential backoffが実行された（2s, 4s）
             # 注: 3回目の試行後はリトライしないため、sleep呼び出しは2回のみ
             assert mock_sleep.call_count == 2
-            mock_sleep.assert_any_call(RETRY_BACKOFF_SECONDS[0])
-            mock_sleep.assert_any_call(RETRY_BACKOFF_SECONDS[1])
+            mock_sleep.assert_any_call(2)
+            mock_sleep.assert_any_call(4)
 
         # クリーンアップ
         await yahoo_scraper.close()
@@ -264,7 +263,7 @@ class TestFetchSellerProducts:
     async def test_fetch_seller_products_exponential_backoff_timing(
         self, yahoo_scraper, mock_playwright
     ):
-        """正常系: exponential backoffのタイミングが正しい（1s, 2s, 4s）"""
+        """正常系: exponential backoffのタイミングが正しい（2s, 4s, 8s）"""
         # Given: すべてのリトライが失敗
         seller_url = "https://auctions.yahoo.co.jp/sellinglist/test"
         mock_page = mock_playwright["page"]
@@ -285,10 +284,7 @@ class TestFetchSellerProducts:
             # 注: 3回目の試行後はリトライしないため、sleep呼び出しは2回のみ
             assert mock_sleep.call_count == 2
             call_args_list = [call[0][0] for call in mock_sleep.call_args_list]
-            assert call_args_list == [
-                RETRY_BACKOFF_SECONDS[0],
-                RETRY_BACKOFF_SECONDS[1],
-            ]
+            assert call_args_list == [2, 4]
 
         # クリーンアップ
         await yahoo_scraper.close()
