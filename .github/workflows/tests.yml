@@ -8,7 +8,7 @@ on:
   workflow_dispatch:  # 手動実行を許可
 
 permissions:
-  contents: read
+  contents: write  # 自動フォーマット時のコミット＆プッシュに必要
 
 jobs:
   test:
@@ -78,6 +78,9 @@ jobs:
     steps:
     - name: チェックアウト
       uses: actions/checkout@v4.1.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: ${{ github.head_ref || github.ref_name }}  # PRブランチまたは現在のブランチ
 
     - name: uv のセットアップ
       uses: astral-sh/setup-uv@v3.0.0
@@ -97,8 +100,8 @@ jobs:
     - name: 静的解析とフォーマットチェック
       run: |
         set -e
-        echo "=== Black (コードフォーマットチェック) ==="
-        uv run black --check modules/ tests/
+        echo "=== Black (コードフォーマット) ==="
+        uv run black modules/ tests/
         echo ""
         echo "=== Ruff (リント・インポート順序チェック) ==="
         uv run ruff check modules/ tests/
@@ -107,6 +110,24 @@ jobs:
         uv run ruff format --check modules/ tests/
         echo ""
         echo "✅ すべての静的解析とフォーマットチェックが成功しました"
+
+    - name: フォーマット変更の自動コミット
+      if: github.event_name == 'pull_request'
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+
+        if ! git diff --quiet; then
+          echo "📝 フォーマット変更を検出しました。自動コミットします..."
+          git add modules/ tests/
+          git commit -m "style: Blackによる自動フォーマット適用
+
+🤖 自動修正by GitHub Actions"
+          git push
+          echo "✅ フォーマット変更をコミット＆プッシュしました"
+        else
+          echo "✅ フォーマット変更はありません"
+        fi
 
   security:
     runs-on: ubuntu-latest
