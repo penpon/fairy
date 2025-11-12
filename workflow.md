@@ -13,21 +13,21 @@ flowchart LR
 
     P1 --> P2
 
-    subgraph P2[Phase 2: TDD /tdd-cycle]
+    subgraph P2[Phase 2: TDD]
         direction TB
         Worktree[Worktree作成] --> Red[🔴 Red] --> Green[🟢 Green] --> Refactor[🔵 Refactor]
     end
 
     P2 --> P3
 
-    subgraph P3[Phase 3: 品質チェック /quality-check]
+    subgraph P3[Phase 3: 品質チェック]
         direction TB
         QC[Black → Ruff → pytest<br/>Coverage → bandit → pip-audit]
     end
 
     P3 --> P4
 
-    subgraph P4[Phase 4: AIレビュー & PR /rabbit-rocket]
+    subgraph P4[Phase 4: AIレビュー & PR]
         direction TB
         CR[CodeRabbit x3回] --> Push[Push & PR作成]
     end
