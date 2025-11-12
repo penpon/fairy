@@ -117,7 +117,7 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
 
-        if ! git diff --quiet; then
+        if ! git diff --quiet modules/ tests/; then
           echo "📝 フォーマット変更を検出しました。自動コミットします..."
           git add modules/ tests/
           git commit -m "style: Blackによる自動フォーマット適用" -m "🤖 自動修正by GitHub Actions"
