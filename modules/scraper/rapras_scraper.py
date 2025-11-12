@@ -316,6 +316,11 @@ class RaprasScraper:
                         continue
                     seller_name = (await seller_name_elem.inner_text()).strip()
 
+                    # 空のセラー名はスキップ
+                    if not seller_name:
+                        logger.debug("Skipping row with empty seller name")
+                        continue
+
                     # 落札価格合計を取得（5列目）
                     price_elem = await row.query_selector("td:nth-child(5)")
                     if not price_elem:
@@ -337,6 +342,11 @@ class RaprasScraper:
                     if not link_elem:
                         continue
                     link = await link_elem.get_attribute("href")
+
+                    # リンクがNullの場合はスキップ
+                    if not link:
+                        logger.warning(f"Skipping seller {seller_name} (no href attribute)")
+                        continue
 
                     sellers.append(
                         {"seller_name": seller_name, "total_price": price_value, "link": link}
