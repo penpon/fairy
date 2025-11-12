@@ -195,13 +195,20 @@ class TestLogger:
 
         # When: Loggerを取得してログを出力
         logger = get_logger("test_file_output")
-        logger.info("Test file log message")
+        try:
+            logger.info("Test file log message")
 
-        # Then: ログファイルが作成され、メッセージが含まれる
-        assert log_file.exists()
-        content = log_file.read_text()
-        assert "Test file log message" in content
-        assert "INFO" in content
+            # Then: ログファイルが作成され、メッセージが含まれる
+            assert log_file.exists()
+            content = log_file.read_text()
+            assert "Test file log message" in content
+            assert "INFO" in content
+        finally:
+            # FileHandlerをクリーンアップ（Windows環境での tmp_path 削除エラー防止）
+            for handler in logger.handlers[:]:
+                if isinstance(handler, logging.FileHandler):
+                    handler.close()
+                    logger.removeHandler(handler)
 
     def test_logger_creates_log_directory_if_not_exists(self, tmp_path, monkeypatch):
         """正常系: logsディレクトリが存在しない場合に自動作成されることを確認"""
@@ -214,11 +221,18 @@ class TestLogger:
 
         # When: Loggerを取得してログを出力
         logger = get_logger("test_create_dir")
-        logger.info("Creating log directory")
+        try:
+            logger.info("Creating log directory")
 
-        # Then: logsディレクトリが自動作成される
-        assert log_dir.exists()
-        assert (log_dir / "app.log").exists()
+            # Then: logsディレクトリが自動作成される
+            assert log_dir.exists()
+            assert (log_dir / "app.log").exists()
+        finally:
+            # FileHandlerをクリーンアップ（Windows環境での tmp_path 削除エラー防止）
+            for handler in logger.handlers[:]:
+                if isinstance(handler, logging.FileHandler):
+                    handler.close()
+                    logger.removeHandler(handler)
 
     def test_logger_both_console_and_file_output(self, tmp_path, caplog, monkeypatch):
         """正常系: ログがコンソールとファイル両方に出力されることを確認"""
@@ -228,17 +242,24 @@ class TestLogger:
 
         # When: Loggerを取得してログを出力
         logger = get_logger("test_both_output")
-        with caplog.at_level(logging.INFO):
-            logger.info("Test both outputs")
+        try:
+            with caplog.at_level(logging.INFO):
+                logger.info("Test both outputs")
 
-        # Then: コンソールにログが出力される
-        assert "Test both outputs" in caplog.text
+            # Then: コンソールにログが出力される
+            assert "Test both outputs" in caplog.text
 
-        # Then: ファイルにもログが出力される
-        log_file = log_dir / "app.log"
-        assert log_file.exists()
-        content = log_file.read_text()
-        assert "Test both outputs" in content
+            # Then: ファイルにもログが出力される
+            log_file = log_dir / "app.log"
+            assert log_file.exists()
+            content = log_file.read_text()
+            assert "Test both outputs" in content
+        finally:
+            # FileHandlerをクリーンアップ（Windows環境での tmp_path 削除エラー防止）
+            for handler in logger.handlers[:]:
+                if isinstance(handler, logging.FileHandler):
+                    handler.close()
+                    logger.removeHandler(handler)
 
     def test_logger_file_format_matches_requirements(self, tmp_path, monkeypatch):
         """正常系: ファイルログのフォーマットが要件通り「[YYYY-MM-DD HH:MM:SS] LEVEL - module - message」であることを確認"""
@@ -248,16 +269,23 @@ class TestLogger:
 
         # When: Loggerを取得してログを出力
         logger = get_logger("test_format_check")
-        logger.info("Format test message")
+        try:
+            logger.info("Format test message")
 
-        # Then: ファイルログのフォーマットが要件通り
-        log_file = log_dir / "app.log"
-        content = log_file.read_text()
+            # Then: ファイルログのフォーマットが要件通り
+            log_file = log_dir / "app.log"
+            content = log_file.read_text()
 
-        # フォーマット: [YYYY-MM-DD HH:MM:SS] LEVEL - module - message
-        # ※ 実装では角括弧[]がないかもしれないので、タイムスタンプ形式を確認
-        pattern = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}"
-        assert re.search(pattern, content) is not None
-        assert "INFO" in content
-        assert "test_format_check" in content
-        assert "Format test message" in content
+            # フォーマット: [YYYY-MM-DD HH:MM:SS] LEVEL - module - message
+            # ※ 実装では角括弧[]がないかもしれないので、タイムスタンプ形式を確認
+            pattern = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}"
+            assert re.search(pattern, content) is not None
+            assert "INFO" in content
+            assert "test_format_check" in content
+            assert "Format test message" in content
+        finally:
+            # FileHandlerをクリーンアップ（Windows環境での tmp_path 削除エラー防止）
+            for handler in logger.handlers[:]:
+                if isinstance(handler, logging.FileHandler):
+                    handler.close()
+                    logger.removeHandler(handler)
