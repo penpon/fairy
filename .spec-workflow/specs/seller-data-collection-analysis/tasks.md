@@ -22,7 +22,7 @@
   - _Leverage: python-dotenv_
   - _Requirements: Requirement 1 (Rapras集計ページからのセラーリンク取得)_
   - _Prompt: Implement the task for spec seller-data-collection-analysis, first run spec-workflow-guide to get the workflow guide then implement the task: Role: Python Developer specializing in secure configuration management | Task: Create settings module to load environment variables from .env file following requirement 1 from .spec-workflow/specs/seller-data-collection-analysis/requirements.md. Use python-dotenv for secure credential management. | Restrictions: Never hardcode credentials, Provide clear error messages for missing .env values, Do not commit .env to version control (add to .gitignore), Use type hints for all settings | Leverage: python-dotenv library, os.getenv() for fallback values | Requirements: Requirement 1 (Rapras集計ページからのセラーリンク取得) | Success: RAPRAS_USERNAME and RAPRAS_PASSWORD loaded from .env with python-dotenv, Raises clear error if required env vars are missing, .env.example already contains placeholder values, .gitignore already excludes .env, Type hints for all settings variables, Validation for required environment variables | Instructions: Before starting implementation, mark this task as in-progress ([-]) in tasks.md. After completing implementation, mark as completed ([x]) in tasks.md._
-- [ ] 4. ロガー設定作成
+- [-] 4. ロガー設定作成
   - File: `modules/utils/logger.py`
   - Purpose: INFO/WARNING/ERRORレベルのログ設定
   - _Leverage: Python logging標準ライブラリ_
