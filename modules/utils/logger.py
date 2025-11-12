@@ -18,7 +18,7 @@ def get_logger(name: str) -> logging.Logger:
     INFO/WARNING/ERRORレベルのログを、コンソールとファイル(logs/app.log)の
     両方に出力する設定済みLoggerを返します。
 
-    ログフォーマット: "[YYYY-MM-DD HH:MM:SS] LEVEL - module - message"
+    ログフォーマット: "YYYY-MM-DD HH:MM:SS - module - LEVEL - message"
     日本語メッセージをサポートしており、エラーメッセージは日本語で記録できます。
 
     Args:
@@ -72,7 +72,6 @@ def get_logger(name: str) -> logging.Logger:
 
     except (OSError, PermissionError, ValueError) as e:
         # ファイルログの初期化に失敗した場合はコンソールのみにフォールバック
-        console_handler.setLevel(logging.WARNING)
         logger.warning(f"Failed to initialize file logging: {e}. Using console-only output.")
 
     return logger
