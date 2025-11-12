@@ -13,7 +13,7 @@ flowchart LR
 
     P0 --> P1
 
-    subgraph P1[Phase 1: 仕様書作成 Spec Documents]
+    subgraph P1[Phase 1: 仕様書作成]
         direction TB
         Req[requirements.md] --> Design[design.md] --> Tasks[tasks.md]
     end
