@@ -526,6 +526,119 @@ class YahooAuctionScraper:
             logger.warning(f"Failed to check login status: {e}")
             return False
 
+    async def fetch_seller_products(
+        self, seller_url: str, max_products: int = 12
+    ) -> dict[str, str | list[str]]:
+        """Yahoo Auctionsセラーページから商品名を取得
+
+        Args:
+            seller_url: Yahoo AuctionsセラーページURL
+            max_products: 取得する最大商品数（デフォルト12）
+
+        Returns:
+            dict: {
+                "seller_name": str,
+                "seller_url": str,
+                "product_titles": list[str]
+            }
+
+        Raises:
+            ConnectionError: プロキシ接続失敗（最大3回リトライ後）
+        """
+        from modules.config.constants import MAX_RETRY_ATTEMPTS, RETRY_BACKOFF_SECONDS
+
+        last_exception = None
+
+        for attempt in range(MAX_RETRY_ATTEMPTS):
+            try:
+                logger.info(
+                    f"Fetching seller products (attempt {attempt + 1}/{MAX_RETRY_ATTEMPTS}): {seller_url}"
+                )
+
+                # ブラウザ起動（プロキシ設定を含む）
+                if not self.page:
+                    await self._launch_browser_with_proxy()
+
+                # セラーページにアクセス
+                await self.page.goto(seller_url, timeout=self._timeout)
+                logger.info(f"Navigated to seller page: {seller_url}")
+
+                # セラー名と商品タイトルを取得
+                seller_name = await self._extract_seller_name()
+                product_titles = await self._extract_product_titles(max_products)
+
+                logger.info(f"Fetched {len(product_titles)} product titles from {seller_name}")
+
+                # 商品数が指定数未満の場合は警告ログ
+                if len(product_titles) < max_products:
+                    logger.warning(
+                        f"商品数が{max_products}件未満です（{len(product_titles)}件）: {seller_name}"
+                    )
+
+                return {
+                    "seller_name": seller_name,
+                    "seller_url": seller_url,
+                    "product_titles": product_titles,
+                }
+
+            except (TimeoutError, Exception) as e:
+                last_exception = e
+                error_type = "Timeout" if isinstance(e, TimeoutError) else "Unexpected error"
+                logger.warning(f"{error_type} occurred: {e}")
+
+                if attempt < MAX_RETRY_ATTEMPTS - 1:
+                    delay = RETRY_BACKOFF_SECONDS[attempt]
+                    logger.info(f"Retrying in {delay} seconds...")
+                    await asyncio.sleep(delay)
+
+        # すべてのリトライが失敗した
+        error_msg = f"Yahoo Auctionsへの接続が3回のリトライ後も失敗しました: {seller_url}"
+        raise ConnectionError(error_msg) from last_exception
+
+    async def _extract_seller_name(self) -> str:
+        """ページからセラー名を抽出
+
+        Returns:
+            セラー名（取得できない場合は"不明なセラー"）
+        """
+        # セラー名セレクタ候補
+        seller_name_selectors = ['h1[class*="seller"]', "h1"]
+
+        for selector in seller_name_selectors:
+            seller_name_element = await self.page.query_selector(selector)
+            if seller_name_element:
+                seller_name_text = await seller_name_element.text_content()
+                if seller_name_text:
+                    return seller_name_text.strip()
+
+        return "不明なセラー"
+
+    async def _extract_product_titles(self, max_products: int) -> list[str]:
+        """ページから商品タイトルを抽出
+
+        Args:
+            max_products: 取得する最大商品数
+
+        Returns:
+            商品タイトルのリスト
+        """
+        # 商品タイトルセレクタ候補
+        product_title_selectors = ['a[class*="product-title"]', 'div[class*="title"]']
+
+        product_elements = []
+        for selector in product_title_selectors:
+            product_elements = await self.page.query_selector_all(selector)
+            if product_elements:
+                break
+
+        product_titles: list[str] = []
+        for element in product_elements[:max_products]:
+            title_text = await element.text_content()
+            if title_text:
+                product_titles.append(title_text.strip())
+
+        return product_titles
+
     async def close(self) -> None:
         """ブラウザセッションを閉じる"""
         try:
