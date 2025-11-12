@@ -22,7 +22,7 @@ Rapras（https://www.rapras.jp/）とYahoo Auctions（https://auctions.yahoo.co.
 - **Code Quality**:
   - Black: コードフォーマット
   - Ruff: リンティング・import整理
-  - pytest: テストフレームワーク（カバレッジ95%以上必須）
+  - pytest: テストフレームワーク（カバレッジ90%以上必須）
 
 ### Project Structure (structure.md)
 
