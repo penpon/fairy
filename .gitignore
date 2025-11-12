@@ -60,3 +60,4 @@ Thumbs.db
 .spec-workflow/approvals/
 .spec-workflow/user-templates/
 .spec-workflow/templates/
+.spec-workflow/specs/*/Implementation Logs/
