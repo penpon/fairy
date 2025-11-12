@@ -1,6 +1,5 @@
 """Unit tests for Settings configuration management with python-dotenv."""
 
-
 import pytest
 
 from modules.config.settings import (
