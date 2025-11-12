@@ -78,15 +78,16 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 - **develop**: 開発統合ブランチ
 - **feature/***: 機能実装ブランチ（git worktreeで分離）
 
-**Development Workflow（tmux並列実行推奨）**
+**Development Workflow**
 
 1. **実装フェーズ（developブランチから開始）**
    - `/tdd-cycle` でworktree作成 & TDD実装（1コマンドで完結）
      - **引数**: `<spec-name> <task-id> [branch-name] <プロンプト>`
      - **worktree自動作成**: developブランチで実行すると自動的にfeatureブランチとworktreeを作成
      - **ブランチ名自動生成**: tasks.mdから日本語タイトルを抽出して英語キーワードに変換
-     - **tasks.md自動更新**: タスクステータスを [ ] → [-] に変更
+     - **tasks.md自動更新（着手時）**: タスクステータスを [ ] → [-] に変更
      - **TDDサイクル**: Red → Green → Refactor → QC → Log → Commit
+     - **tasks.md自動更新（完了時）**: タスクステータスを [-] → [x] に変更してコミット
      - **ブランチチェック**: main/developブランチの場合はworktree作成、feature/*の場合は既存worktreeで継続
      - **タスクID整合性チェック**: ブランチとタスクIDの一致を検証
      - 品質チェック（black, ruff, pytest, coverage）が自動実行される
