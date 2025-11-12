@@ -2,6 +2,51 @@
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+__all__ = [
+    "RaprasConfig",
+    "YahooConfig",
+    "ProxyConfig",
+    "load_dotenv_file",
+    "load_rapras_config",
+    "load_yahoo_config",
+    "load_proxy_config",
+]
+
+
+def load_dotenv_file(dotenv_path: str | None = None) -> bool:
+    """.envファイルを読み込む
+
+    Args:
+        dotenv_path: .envファイルのパス（省略時は".env"）
+
+    Returns:
+        bool: 読み込み成功時True
+
+    Raises:
+        FileNotFoundError: .envファイルが存在しない場合
+    """
+    if dotenv_path is None:
+        dotenv_path = ".env"
+
+    env_file = Path(dotenv_path)
+    if not env_file.exists():
+        raise FileNotFoundError(
+            f".env file not found at: {env_file.absolute()}. "
+            "Please create .env file based on .env.example"
+        )
+
+    # override=Falseで環境変数が優先される
+    success = load_dotenv(dotenv_path=dotenv_path, override=False)
+    if not success:
+        raise ValueError(
+            f"Failed to load .env file at: {env_file.absolute()}. "
+            "Please check the file format."
+        )
+    return True
 
 
 @dataclass

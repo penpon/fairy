@@ -53,7 +53,7 @@ modules/
 │   ├── csv_exporter.py        # CSVExporter: CSV出力
 │   └── models.py              # Product, Sellerデータモデル
 ├── config/
-│   ├── settings.py            # 環境変数（RAPRAS_PHONE, Yahoo Proxy設定）
+│   ├── settings.py            # 環境変数（RAPRAS_USERNAME, RAPRAS_PASSWORD, Yahoo Proxy設定）
 │   └── constants.py           # MAX_PRODUCTS_PER_SELLER=12, MIN_SELLER_PRICE=100000等
 └── utils/
     └── logger.py              # ロギング設定
@@ -175,15 +175,16 @@ graph TD
 - **Interfaces**:
   ```python
   class RaprasScraper:
-      def __init__(self, phone_number: str):
+      def __init__(self, username: str, password: str):
           """
           Args:
-              phone_number: Raprasログイン用電話番号（.envから取得）
+              username: Raprasログイン用ユーザー名（.envから取得）
+              password: Raprasログイン用パスワード（.envから取得）
           """
 
       async def login(self) -> bool:
           """
-          Raprasにログイン（SMS認証含む）
+          Raprasにログイン
           Returns:
               bool: ログイン成功時True
           Raises:
@@ -208,7 +209,7 @@ graph TD
   ```
 - **Dependencies**:
   - Playwright (ブラウザ自動化)
-  - modules.config.settings (RAPRAS_PHONE)
+  - modules.config.settings (RAPRAS_USERNAME, RAPRAS_PASSWORD)
   - modules.utils.logger
 - **Reuses**:
   - structure.mdで定義されたSessionManager（将来実装予定、現在はPlaywright直接使用）
@@ -426,13 +427,13 @@ class Product:
 ### Error Scenarios
 
 #### 1. Raprasログイン失敗
-- **Description**: SMS認証失敗、不正な電話番号
+- **Description**: 認証失敗、不正なユーザー名またはパスワード
 - **Handling**:
   - `AuthenticationError`を発生
   - ログに詳細エラーメッセージを記録
   - リトライなし（手動再実行が必要）
 - **User Impact**:
-  - エラーメッセージ: `"Raprasログインに失敗しました。電話番号とSMSコードを確認してください。"`
+  - エラーメッセージ: `"Raprasログインに失敗しました。ユーザー名とパスワードを確認してください。"`
   - 処理中断
 
 #### 2. Yahoo Auctionsプロキシ接続失敗
@@ -616,7 +617,7 @@ async def process_sellers(seller_links: list[str]) -> list[Seller]:
 ## Security Considerations
 
 ### 認証情報管理
-- **電話番号**: `.env`ファイルで管理（`RAPRAS_PHONE`）
+- **Rapras認証情報**: `.env`ファイルで管理（`RAPRAS_USERNAME`, `RAPRAS_PASSWORD`）
 - `.env`を`.gitignore`に追加（リポジトリにコミットしない）
 
 ### プロキシ設定
