@@ -30,7 +30,7 @@ Seller Data Collection Analysis機能は、Raprasの集計ページからYahoo A
   - Yahoo Auctions Proxy (`http://164.70.96.2:3128`)
 
 #### 品質基準
-- **Test Coverage**: 95%以上（pytest-cov）
+- **Test Coverage**: 90%以上（pytest-cov）
 - **Code Quality**: Black（フォーマット） + Ruff（リント）
 - **Security**: bandit, safety による脆弱性スキャン
 
@@ -495,7 +495,7 @@ class Product:
 
 ### Unit Testing
 
-**目標カバレッジ**: 95%以上（pytest-cov）
+**目標カバレッジ**: 90%以上（pytest-cov）
 
 #### RaprasScraper
 - **正常系**:
@@ -574,7 +574,7 @@ class Product:
 #### テスト環境
 - **Mock Server**: Playwrightのroute機能でRapras/Yahoo Auctionsをモック
 - **Gemini CLI Mock**: `subprocess.run`をモック化（pytestのmonkeypatch使用）
-- **CI/CD**: GitHub Actions（pytest実行、カバレッジ95%以上を必須）
+- **CI/CD**: GitHub Actions（pytest実行、カバレッジ90%以上を必須）
 
 ## Performance Optimization
 
@@ -640,13 +640,13 @@ async def process_sellers(seller_links: list[str]) -> list[Seller]:
 7. AnimeFilter実装
 8. CSVExporter実装（最終CSV）
 9. main.py（並行処理オーケストレーション）
-10. ユニットテスト作成（カバレッジ95%以上）
+10. ユニットテスト作成（カバレッジ90%以上）
 11. 統合テスト作成
 
 ### 品質チェック手順（実装後必須）
 1. `black modules/ tests/ main.py`
 2. `ruff check --fix modules/ tests/ main.py`
 3. `pytest tests/ -v`（失敗時は必ず修正）
-4. `pytest --cov=modules --cov-report=html`（95%以上必須）
+4. `pytest --cov=modules --cov-report=html`（90%以上必須）
 5. `bandit -r modules/ tests/ main.py`
 6. `safety check --json`

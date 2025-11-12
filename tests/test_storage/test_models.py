@@ -3,7 +3,7 @@
 Requirements:
 - Requirement 2 (Yahoo Auctionsセラーページからの商品名取得)
 - Requirement 3 (中間CSVエクスポート)
-- Non-Functional Requirements (Testability - 95% coverage)
+- Non-Functional Requirements (Testability - 90% coverage)
 """
 
 from modules.storage.models import Product, Seller

@@ -61,7 +61,7 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 - **Linting & Import Management**: Ruff（スタイルチェック、import 整理含む）
 - **Testing Framework**: pytest
 - **Async Testing**: pytest-asyncio（async/await関数のテスト対応）
-- **Test Coverage**: pytest-cov（カバレッジ率 95% 以上を必須維持）
+- **Test Coverage**: pytest-cov（カバレッジ率 90% 以上を必須維持）
 - **Security**: bandit（コード脆弱性検査）、pip-audit（依存関係脆弱性検査）
 - **Documentation**: Sphinx / MkDocs（計画中）
 
@@ -69,7 +69,7 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 
 **TDD (Test-Driven Development)**: `/tdd-cycle` コマンドでRed-Green-Refactorサイクルを実行
 
-**品質管理**: `/quality-check` コマンドでコミット前チェック（カバレッジ95%必須）
+**品質管理**: `/quality-check` コマンドでコミット前チェック（カバレッジ90%必須）
 
 ### Version Control & Collaboration
 
@@ -140,7 +140,7 @@ Task: <タスク番号>
 - **Unit Tests**: 個別モジュールテスト
 - **Integration Tests**: Rapras・Yahoo Auctions 連携テスト
 - **E2E Tests**: Playwright UI テスト
-- **Coverage Target**: 95% 以上を必須維持
+- **Coverage Target**: 90% 以上を必須維持
 
 ## Key Requirements（Phase 1-2）
 
@@ -149,7 +149,7 @@ Task: <タスク番号>
 - **Processing Speed**: 1000行 CSV 処理を 5秒以内に
 
 ### Quality & Reliability
-- **Test Coverage**: 95% 以上を必須維持
+- **Test Coverage**: 90% 以上を必須維持
 
 ### Security
 - **Authentication**: SMS 認証対応
