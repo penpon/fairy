@@ -93,7 +93,7 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 
 2. **レビュー&PR作成**（`/rabbit-rocket`）
    - CodeRabbit CLI でコードレビュー（ローカル）
-   - 重大問題を修正（最大2回反復）
+   - 重大問題を修正（最大3回反復）
    - Push → develop へ PR作成
    - GitHub上でCodeRabbit & Copilotが自動レビュー
    - **自動修正機能**:
