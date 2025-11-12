@@ -13,7 +13,7 @@ flowchart LR
 
     P0 --> P1
 
-    subgraph P1[Phase 1: 仕様書作成 Spec Documents]
+    subgraph P1[Phase 1: 仕様書作成]
         direction TB
         Req[requirements.md] --> Design[design.md] --> Tasks[tasks.md]
     end
@@ -45,7 +45,7 @@ flowchart LR
         direction TB
         GH_Test[Phase3と同じ品質チェック<br/>Black/Ruff/pytest/Coverage/bandit/pip-audit] --> GH_Review[CodeRabbit & Copilot<br/>自動レビュー]
         GH_Review --> GH_Fix{テスト失敗?}
-        GH_Fix -->|Yes| GH_Claude[Claude自動修正]
+        GH_Fix -->|Yes| GH_Claude[@Claudeメンションでコード修正]
         GH_Claude --> GH_Test
         GH_Fix -->|No| GH_Merge[マージ可能]
     end
