@@ -51,13 +51,28 @@ def get_logger(name: str) -> logging.Logger:
     logger.addHandler(console_handler)
 
     # ファイルハンドラを作成
-    log_dir = Path(os.environ.get("LOG_DIR", DEFAULT_LOG_DIR))
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / DEFAULT_LOG_FILE
+    log_dir_env = os.environ.get("LOG_DIR", DEFAULT_LOG_DIR)
 
-    file_handler = logging.FileHandler(log_file, encoding="utf-8")
-    file_handler.setLevel(logging.INFO)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+    # LOG_DIRのバリデーション
+    try:
+        log_dir = Path(log_dir_env).resolve()
+
+        # 空のパスや不正なパスを拒否
+        if not log_dir_env or log_dir_env.strip() == "":
+            raise ValueError("LOG_DIR cannot be empty")
+
+        # ディレクトリ作成とファイルハンドラの設定
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / DEFAULT_LOG_FILE
+
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    except (OSError, PermissionError, ValueError) as e:
+        # ファイルログの初期化に失敗した場合はコンソールのみにフォールバック
+        console_handler.setLevel(logging.WARNING)
+        logger.warning(f"Failed to initialize file logging: {e}. Using console-only output.")
 
     return logger

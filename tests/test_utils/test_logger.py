@@ -1,6 +1,7 @@
 """Unit tests for Logger utility."""
 
 import logging
+import re
 
 from modules.utils.logger import get_logger
 
@@ -183,16 +184,14 @@ class TestLogger:
         record = caplog.records[0]
         assert record.name == module_name
 
-    def test_logger_writes_to_file(self, tmp_path):
+    def test_logger_writes_to_file(self, tmp_path, monkeypatch):
         """正常系: ログがファイル(logs/app.log)に出力されることを確認"""
         # Given: 一時ディレクトリにログファイルを作成
-        import os
-
         log_dir = tmp_path / "logs"
         log_file = log_dir / "app.log"
 
         # 環境変数でログディレクトリを指定（テスト用）
-        os.environ["LOG_DIR"] = str(log_dir)
+        monkeypatch.setenv("LOG_DIR", str(log_dir))
 
         # When: Loggerを取得してログを出力
         logger = get_logger("test_file_output")
@@ -204,19 +203,14 @@ class TestLogger:
         assert "Test file log message" in content
         assert "INFO" in content
 
-        # クリーンアップ
-        del os.environ["LOG_DIR"]
-
-    def test_logger_creates_log_directory_if_not_exists(self, tmp_path):
+    def test_logger_creates_log_directory_if_not_exists(self, tmp_path, monkeypatch):
         """正常系: logsディレクトリが存在しない場合に自動作成されることを確認"""
         # Given: logsディレクトリが存在しない状態
-        import os
-
         log_dir = tmp_path / "logs"
         assert not log_dir.exists()
 
         # 環境変数でログディレクトリを指定
-        os.environ["LOG_DIR"] = str(log_dir)
+        monkeypatch.setenv("LOG_DIR", str(log_dir))
 
         # When: Loggerを取得してログを出力
         logger = get_logger("test_create_dir")
@@ -226,16 +220,11 @@ class TestLogger:
         assert log_dir.exists()
         assert (log_dir / "app.log").exists()
 
-        # クリーンアップ
-        del os.environ["LOG_DIR"]
-
-    def test_logger_both_console_and_file_output(self, tmp_path, caplog):
+    def test_logger_both_console_and_file_output(self, tmp_path, caplog, monkeypatch):
         """正常系: ログがコンソールとファイル両方に出力されることを確認"""
         # Given: ログディレクトリを設定
-        import os
-
         log_dir = tmp_path / "logs"
-        os.environ["LOG_DIR"] = str(log_dir)
+        monkeypatch.setenv("LOG_DIR", str(log_dir))
 
         # When: Loggerを取得してログを出力
         logger = get_logger("test_both_output")
@@ -251,17 +240,11 @@ class TestLogger:
         content = log_file.read_text()
         assert "Test both outputs" in content
 
-        # クリーンアップ
-        del os.environ["LOG_DIR"]
-
-    def test_logger_file_format_matches_requirements(self, tmp_path):
+    def test_logger_file_format_matches_requirements(self, tmp_path, monkeypatch):
         """正常系: ファイルログのフォーマットが要件通り「[YYYY-MM-DD HH:MM:SS] LEVEL - module - message」であることを確認"""
         # Given: ログディレクトリを設定
-        import os
-        import re
-
         log_dir = tmp_path / "logs"
-        os.environ["LOG_DIR"] = str(log_dir)
+        monkeypatch.setenv("LOG_DIR", str(log_dir))
 
         # When: Loggerを取得してログを出力
         logger = get_logger("test_format_check")
@@ -278,6 +261,3 @@ class TestLogger:
         assert "INFO" in content
         assert "test_format_check" in content
         assert "Format test message" in content
-
-        # クリーンアップ
-        del os.environ["LOG_DIR"]
