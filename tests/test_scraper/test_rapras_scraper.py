@@ -579,16 +579,14 @@ class TestRaprasScraper:
         mock_page = mock_playwright["page"]
         mock_page.query_selector.return_value = MagicMock()  # ログイン状態
 
-        # goto() でタイムアウトを発生させる
-        mock_page.goto.side_effect = TimeoutError("Navigation timeout")
-
         with patch(
             "modules.scraper.rapras_scraper.async_playwright",
             return_value=mock_playwright["async_pw_instance"],
         ):
-            await rapras_scraper.login("test_user", "test_password")
+            # ブラウザのみ起動（ログインはスキップ）
+            await rapras_scraper._launch_browser()
 
-            # gotoのタイムアウトを再設定
+            # fetch_seller_links内のgoto()でタイムアウトを発生させる
             mock_page.goto.side_effect = TimeoutError("Navigation timeout")
 
             # When/Then: TimeoutError が再スローされる
@@ -605,16 +603,14 @@ class TestRaprasScraper:
         mock_page = mock_playwright["page"]
         mock_page.query_selector.return_value = MagicMock()  # ログイン状態
 
-        # goto() で予期しない例外を発生させる
-        mock_page.goto.side_effect = RuntimeError("Unexpected error")
-
         with patch(
             "modules.scraper.rapras_scraper.async_playwright",
             return_value=mock_playwright["async_pw_instance"],
         ):
-            await rapras_scraper.login("test_user", "test_password")
+            # ブラウザのみ起動（ログインはスキップ）
+            await rapras_scraper._launch_browser()
 
-            # gotoの例外を再設定
+            # fetch_seller_links内のgoto()で予期しない例外を発生させる
             mock_page.goto.side_effect = RuntimeError("Unexpected error")
 
             # When/Then: 例外が再スローされる
