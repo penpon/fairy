@@ -273,9 +273,7 @@ class TestProxyConfigWithDotenv:
         """異常系: PROXY_USERNAMEが未設定の場合、ValueErrorが発生することを確認"""
         # Given: .envファイルにPROXY_USERNAMEが設定されていない
         env_file = tmp_path / ".env"
-        env_file.write_text(
-            "PROXY_URL=http://proxy.example.com:3128\nPROXY_PASSWORD=proxy_pass\n"
-        )
+        env_file.write_text("PROXY_URL=http://proxy.example.com:3128\nPROXY_PASSWORD=proxy_pass\n")
         monkeypatch.chdir(tmp_path)
         monkeypatch.delenv("PROXY_URL", raising=False)
         monkeypatch.delenv("PROXY_USERNAME", raising=False)
@@ -295,9 +293,7 @@ class TestProxyConfigWithDotenv:
         """異常系: PROXY_PASSWORDが未設定の場合、ValueErrorが発生することを確認"""
         # Given: .envファイルにPROXY_PASSWORDが設定されていない
         env_file = tmp_path / ".env"
-        env_file.write_text(
-            "PROXY_URL=http://proxy.example.com:3128\nPROXY_USERNAME=proxy_user\n"
-        )
+        env_file.write_text("PROXY_URL=http://proxy.example.com:3128\nPROXY_USERNAME=proxy_user\n")
         monkeypatch.chdir(tmp_path)
         monkeypatch.delenv("PROXY_URL", raising=False)
         monkeypatch.delenv("PROXY_USERNAME", raising=False)
@@ -317,9 +313,7 @@ class TestProxyConfigWithDotenv:
         """異常系: PROXY_URLが空文字列の場合、ValueErrorが発生することを確認"""
         # Given: .envファイルにPROXY_URLが空文字列で設定されている
         env_file = tmp_path / ".env"
-        env_file.write_text(
-            "PROXY_URL=\nPROXY_USERNAME=proxy_user\nPROXY_PASSWORD=proxy_pass\n"
-        )
+        env_file.write_text("PROXY_URL=\nPROXY_USERNAME=proxy_user\nPROXY_PASSWORD=proxy_pass\n")
         monkeypatch.chdir(tmp_path)
         monkeypatch.delenv("PROXY_URL", raising=False)
         monkeypatch.delenv("PROXY_USERNAME", raising=False)
