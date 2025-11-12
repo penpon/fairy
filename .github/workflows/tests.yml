@@ -149,10 +149,6 @@ jobs:
       run: |
         uv sync --group dev
 
-    - name: セキュリティツールのインストール
-      run: |
-        uv pip install bandit pip-audit
-
     - name: セキュリティチェック (bandit)
       run: |
         echo "=== コード脆弱性をスキャン中 (bandit) ==="
