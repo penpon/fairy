@@ -6,14 +6,14 @@
 flowchart LR
     Start([開発開始]) --> P0
 
-    subgraph P0[Phase 0: Steering Documents]
+    subgraph P0[Phase 0: ステアリング文書]
         direction TB
         Product[product.md] --> Tech[tech.md] --> Structure[structure.md]
     end
 
     P0 --> P1
 
-    subgraph P1[Phase 1: 仕様書作成]
+    subgraph P1[Phase 1: 仕様書作成 Spec Documents]
         direction TB
         Req[requirements.md] --> Design[design.md] --> Tasks[tasks.md]
     end
@@ -43,7 +43,7 @@ flowchart LR
 
     subgraph P5[Phase 5: GitHub Actions]
         direction TB
-        GH_Test[Tests実行<br/>test/lint/security] --> GH_Review[CodeRabbit & Copilot<br/>自動レビュー]
+        GH_Test[Phase3と同じ品質チェック<br/>Black/Ruff/pytest/Coverage/bandit/pip-audit] --> GH_Review[CodeRabbit & Copilot<br/>自動レビュー]
         GH_Review --> GH_Fix{テスト失敗?}
         GH_Fix -->|Yes| GH_Claude[Claude自動修正]
         GH_Claude --> GH_Test
