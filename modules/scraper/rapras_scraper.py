@@ -248,10 +248,32 @@ class RaprasScraper:
             list[dict]: [{"seller_name": str, "total_price": int, "link": str}]
 
         Raises:
-            RuntimeError: ブラウザが初期化されていない場合
+            RuntimeError: ブラウザが初期化されていない場合、またはログインしていない場合
+            ValueError: 日付形式が不正、または開始日が終了日より後の場合
         """
+        # 日付形式の検証
+        from datetime import datetime
+
+        try:
+            start = datetime.strptime(start_date, "%Y-%m-%d")
+            end = datetime.strptime(end_date, "%Y-%m-%d")
+        except ValueError as e:
+            raise ValueError(f"Invalid date format. Expected YYYY-MM-DD: {e}") from e
+
+        # 日付範囲の検証
+        if start > end:
+            raise ValueError(f"start_date ({start_date}) must be <= end_date ({end_date})")
+
+        # 最低価格の検証
+        if min_price < 0:
+            raise ValueError(f"min_price must be >= 0, got {min_price}")
+
         if not self.page:
             raise RuntimeError("Browser not initialized. Call login() first.")
+
+        # ログイン状態の検証
+        if not await self.is_logged_in():
+            raise RuntimeError("Not logged in. Session may have expired.")
 
         try:
             # 集計ページURL
@@ -292,7 +314,7 @@ class RaprasScraper:
                     seller_name_elem = await row.query_selector("td:nth-child(2)")
                     if not seller_name_elem:
                         continue
-                    seller_name = await seller_name_elem.inner_text()
+                    seller_name = (await seller_name_elem.inner_text()).strip()
 
                     # 落札価格合計を取得（5列目）
                     price_elem = await row.query_selector("td:nth-child(5)")
