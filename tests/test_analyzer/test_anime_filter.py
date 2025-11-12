@@ -110,7 +110,7 @@ class TestIsAnimeTitle:
         call_args = mock_run.call_args[0][0]
         assert "らんまちゃん らんま" in " ".join(call_args)
         # Ensure "A4 ポスター" is NOT in the prompt
-        assert "A4" not in " ".join(call_args) or "ポスター" not in " ".join(call_args)
+        assert "A4" not in " ".join(call_args) and "ポスター" not in " ".join(call_args)
 
     def test_is_anime_title_handles_gemini_api_error(self, mocker):
         """Test is_anime_title handles GeminiAPIError gracefully."""

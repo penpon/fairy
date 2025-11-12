@@ -100,6 +100,7 @@ class AnimeFilter:
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=30,  # 30 second timeout
             )
 
             response = result.stdout.strip()
@@ -111,6 +112,9 @@ class AnimeFilter:
         except subprocess.CalledProcessError as e:
             logger.error(f"Gemini CLI execution failed for '{extracted_title}': {e.stderr}")
             raise GeminiAPIError(f"Gemini CLI execution failed: {e.stderr}") from e
+        except subprocess.TimeoutExpired:
+            logger.error(f"Gemini CLI timeout for '{extracted_title}'")
+            raise GeminiAPIError(f"Gemini CLI timeout after 30 seconds")
 
     def filter_sellers(self, sellers: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Filter sellers and mark anime sellers.
