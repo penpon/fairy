@@ -585,9 +585,7 @@ class YahooAuctionScraper:
                 logger.warning(f"{error_type} occurred: {e}")
 
                 if attempt < self._max_retries - 1:
-                    delay = self._retry_delays[attempt]
-                    logger.info(f"Retrying in {delay} seconds...")
-                    await asyncio.sleep(delay)
+                    await self._retry_with_backoff(attempt)
 
         # すべてのリトライが失敗した
         error_msg = (
