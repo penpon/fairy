@@ -36,7 +36,7 @@ flowchart LR
 
     subgraph P4[Phase 4: AIレビュー & PR]
         direction TB
-        CR[CodeRabbitローカル x3回] --> P4_QC[Phase3と同じ品質チェック<br/>Black/Ruff/pytest/Coverage/bandit/pip-audit] --> P4_Review[CodeRabbit & Copilot<br/>自動レビュー] --> Push[Push & PR作成]
+        CR[CodeRabbitローカル x3回] --> P4_QC[Phase3と同じ品質チェック<br/>Black/Ruff/pytest/Coverage/bandit/pip-audit] --> Push[Push & PR作成]
     end
 
     P4 --> P5
