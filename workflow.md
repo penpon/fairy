@@ -45,7 +45,7 @@ flowchart LR
         direction TB
         P5_Test[Phase3と同じ品質チェック<br/>Black/Ruff/pytest/Coverage/bandit/pip-audit] --> P5_Review[CodeRabbit & Copilot<br/>自動レビュー]
         P5_Review --> P5_Fix{テスト失敗?}
-        P5_Fix -->|Yes| P5_Claude[claude codeで修正]
+        P5_Fix -->|Yes| P5_Claude[Claude Codeで修正]
         P5_Claude --> P5_Test
         P5_Fix -->|No| P5_Merge[マージ可能]
     end
