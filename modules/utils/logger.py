@@ -40,7 +40,7 @@ def get_logger(name: str) -> logging.Logger:
         return logger
 
     logger.setLevel(logging.INFO)
-    logger.propagate = False  # ルートロガーへの伝播を無効化して二重出力を防止
+    logger.propagate = True  # ルートロガーへ伝播を許可して、テスト時のログキャプチャを有効化
 
     # フォーマッターを作成（タイムスタンプとモジュール名を含む）
     formatter = logging.Formatter(fmt=LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
