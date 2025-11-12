@@ -16,7 +16,7 @@
   - _Leverage: Python標準ライブラリ_
   - _Requirements: Requirement 1 (Rapras集計ページからのセラーリンク取得), Requirement 2 (Yahoo Auctionsセラーページからの商品名取得)_
   - _Prompt: Implement the task for spec seller-data-collection-analysis, first run spec-workflow-guide to get the workflow guide then implement the task: Role: Python Developer specializing in configuration management | Task: Define application constants following requirements 1 and 2 from .spec-workflow/specs/seller-data-collection-analysis/requirements.md. Centralize all magic numbers and configuration values. | Restrictions: Use UPPER_SNAKE_CASE for all constants, Do not include sensitive data (use settings.py for .env values), Group related constants with comments, Do not use dynamic values (constants must be static) | Leverage: Python standard library (no external dependencies) | Requirements: Requirement 1 (Rapras集計ページからのセラーリンク取得), Requirement 2 (Yahoo Auctionsセラーページからの商品名取得) | Success: MAX_PRODUCTS_PER_SELLER = 12, MIN_SELLER_PRICE = 100000, MAX_RETRY_ATTEMPTS = 3, YAHOO_PROXY = "http://164.70.96.2:3128", RAPRAS_BASE_URL = "https://www.rapras.jp", RAPRAS_SUM_ANALYSE_PATH = "/sum_analyse", RETRY_BACKOFF_SECONDS = [1, 2, 4], All constants properly documented with comments | Instructions: Before starting implementation, mark this task as in-progress ([-]) in tasks.md. After completing implementation, mark as completed ([x]) in tasks.md._
-- [ ] 3. 環境変数設定ファイル作成 (settings.py)
+- [x] 3. 環境変数設定ファイル作成 (settings.py)
   - File: `modules/config/settings.py`
   - Purpose: .envから環境変数を読み込み（RAPRAS_USERNAME, RAPRAS_PASSWORD）
   - _Leverage: python-dotenv_
