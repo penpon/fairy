@@ -44,7 +44,7 @@
   - _Prompt: Implement the task for spec seller-data-collection-analysis, first run spec-workflow-guide to get the workflow guide then implement the task: Role: Python Developer specializing in web scraping and proxy configuration | Task: Implement YahooAuctionScraper class following requirement 2 from .spec-workflow/specs/seller-data-collection-analysis/requirements.md. Use Playwright with proxy configuration and exponential backoff retry logic. | Restrictions: Must use proxy for all Yahoo Auctions requests (http://164.70.96.2:3128), Implement exponential backoff (1s, 2s, 4s), Maximum 3 retry attempts, Must use async/await pattern, Follow design.md interface specifications exactly | Leverage: Playwright async API with proxy configuration, modules.config.constants (YAHOO_PROXY, MAX_RETRY_ATTEMPTS, RETRY_BACKOFF_SECONDS), modules.utils.logger | Requirements: Requirement 2 (Yahoo Auctionsセラーページからの商品名取得) | Success: YahooAuctionScraper class with __init__(proxy: str), async fetch_seller_products(seller_url, max_products=12) method, Returns dict with seller_name, seller_url, product_titles, Implements retry logic with exponential backoff, Raises ConnectionError after 3 failed attempts, Logs warnings for products < 12, Proxy correctly configured in Playwright browser context, Follows design.md interface specifications | Instructions: Before starting implementation, mark this task as in-progress ([-]) in tasks.md. After completing implementation, mark as completed ([x]) in tasks.md._
 ### Phase 3: Analyzer Layer
 
-- [ ] 7. AnimeFilter実装
+- [-] 7. AnimeFilter実装
   - File: `modules/analyzer/anime_filter.py`
   - Purpose: Gemini CLIでアニメタイトル判定
   - _Leverage: subprocess (Gemini CLI), modules.utils.logger_
