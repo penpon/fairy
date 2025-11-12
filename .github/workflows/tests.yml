@@ -120,9 +120,12 @@ jobs:
         if ! git diff --quiet; then
           echo "📝 フォーマット変更を検出しました。自動コミットします..."
           git add modules/ tests/
-          git commit -m "style: Blackによる自動フォーマット適用
+          git commit -m "$(cat <<'EOF'
+style: Blackによる自動フォーマット適用
 
-🤖 自動修正by GitHub Actions"
+🤖 自動修正by GitHub Actions
+EOF
+)"
           git push
           echo "✅ フォーマット変更をコミット＆プッシュしました"
         else
