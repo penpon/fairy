@@ -474,3 +474,248 @@ class TestRaprasScraper:
             assert result[0]["total_price"] == 100000
 
         await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_invalid_date_format(self, rapras_scraper, mock_playwright):
+        """異常系: 不正な日付フォーマット"""
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+
+            # When/Then: ValueError が発生
+            with pytest.raises(ValueError) as exc_info:
+                await rapras_scraper.fetch_seller_links(
+                    start_date="2025/08/01",  # 不正なフォーマット
+                    end_date="2025-10-31",
+                    min_price=100000,
+                )
+
+            assert "Invalid date format" in str(exc_info.value)
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_invalid_date_range(self, rapras_scraper, mock_playwright):
+        """異常系: 開始日が終了日より後"""
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+
+            # When/Then: ValueError が発生
+            with pytest.raises(ValueError) as exc_info:
+                await rapras_scraper.fetch_seller_links(
+                    start_date="2025-10-31", end_date="2025-08-01", min_price=100000
+                )
+
+            assert "start_date" in str(exc_info.value)
+            assert "end_date" in str(exc_info.value)
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_negative_min_price(self, rapras_scraper, mock_playwright):
+        """異常系: 負の最低価格"""
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+
+            # When/Then: ValueError が発生
+            with pytest.raises(ValueError) as exc_info:
+                await rapras_scraper.fetch_seller_links(
+                    start_date="2025-08-01", end_date="2025-10-31", min_price=-1
+                )
+
+            assert "min_price must be >= 0" in str(exc_info.value)
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_browser_not_initialized(self, rapras_scraper):
+        """異常系: ブラウザが初期化されていない"""
+        # Given: ログインせずにfetch_seller_linksを呼ぶ
+        assert rapras_scraper.page is None
+
+        # When/Then: RuntimeError が発生
+        with pytest.raises(RuntimeError) as exc_info:
+            await rapras_scraper.fetch_seller_links(
+                start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+            )
+
+        assert "Browser not initialized" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_not_logged_in(self, rapras_scraper, mock_playwright):
+        """異常系: ログインしていない"""
+        # Given: ブラウザは起動しているがログインしていない
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = None  # ログアウト状態
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            # ブラウザのみ起動（ログインはスキップ）
+            await rapras_scraper._launch_browser()
+
+            # When/Then: RuntimeError が発生
+            with pytest.raises(RuntimeError) as exc_info:
+                await rapras_scraper.fetch_seller_links(
+                    start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+                )
+
+            assert "Not logged in" in str(exc_info.value)
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_timeout(self, rapras_scraper, mock_playwright):
+        """異常系: ページ読み込みタイムアウト"""
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()  # ログイン状態
+
+        # goto() でタイムアウトを発生させる
+        mock_page.goto.side_effect = TimeoutError("Navigation timeout")
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+
+            # gotoのタイムアウトを再設定
+            mock_page.goto.side_effect = TimeoutError("Navigation timeout")
+
+            # When/Then: TimeoutError が再スローされる
+            with pytest.raises(TimeoutError):
+                await rapras_scraper.fetch_seller_links(
+                    start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+                )
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_unexpected_exception(self, rapras_scraper, mock_playwright):
+        """異常系: 予期しない例外"""
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()  # ログイン状態
+
+        # goto() で予期しない例外を発生させる
+        mock_page.goto.side_effect = RuntimeError("Unexpected error")
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+
+            # gotoの例外を再設定
+            mock_page.goto.side_effect = RuntimeError("Unexpected error")
+
+            # When/Then: 例外が再スローされる
+            with pytest.raises(RuntimeError):
+                await rapras_scraper.fetch_seller_links(
+                    start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+                )
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_no_table_found(self, rapras_scraper, mock_playwright):
+        """境界値: セラーテーブルが見つからない"""
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()  # ログイン状態
+
+        # テーブルが見つからない
+        async def page_query_selector_all(sel):
+            if sel == "table":
+                return []  # テーブルなし
+            return []
+
+        mock_page.query_selector_all = page_query_selector_all
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+
+            # When: セラーリンクを取得
+            result = await rapras_scraper.fetch_seller_links(
+                start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+            )
+
+            # Then: 空のリスト
+            assert len(result) == 0
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_parse_error_in_row(self, rapras_scraper, mock_playwright):
+        """異常系: 行のパース中にエラー"""
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()  # ログイン状態
+
+        # モックの行でパースエラーを発生させる
+        mock_row = MagicMock()
+
+        async def row_query_selector(sel):
+            if sel == "td:nth-child(2)":
+                return AsyncMock(inner_text=AsyncMock(return_value="セラーE"))
+            elif sel == "td:nth-child(5)":
+                # 不正な価格フォーマット（数値に変換できない）
+                return AsyncMock(inner_text=AsyncMock(return_value="不正な価格"))
+            elif sel == "td:nth-child(2) a":
+                return AsyncMock(
+                    get_attribute=AsyncMock(
+                        return_value="https://auctions.yahoo.co.jp/sellinglist/seller_e"
+                    )
+                )
+            return None
+
+        mock_row.query_selector = row_query_selector
+
+        # テーブルのモックを作成
+        mock_table = MagicMock()
+
+        async def table_query_selector(sel):
+            if sel == "tbody tr":
+                return mock_row
+            return None
+
+        async def table_query_selector_all(sel):
+            if sel == "tbody tr":
+                return [mock_row]
+            return []
+
+        mock_table.query_selector = table_query_selector
+        mock_table.query_selector_all = table_query_selector_all
+
+        # pageのquery_selector_allはtablesとして呼ばれる
+        async def page_query_selector_all(sel):
+            if sel == "table":
+                return [mock_table]
+            return []
+
+        mock_page.query_selector_all = page_query_selector_all
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+
+            # When: セラーリンクを取得（パースエラーは無視される）
+            result = await rapras_scraper.fetch_seller_links(
+                start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+            )
+
+            # Then: パースエラーの行はスキップされ空のリスト
+            assert len(result) == 0
+
+        await rapras_scraper.close()
