@@ -1,6 +1,7 @@
 """Rapras authentication scraper module."""
 
 import asyncio
+from datetime import datetime
 
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 
@@ -252,8 +253,6 @@ class RaprasScraper:
             ValueError: 日付形式が不正、または開始日が終了日より後の場合
         """
         # 日付形式の検証
-        from datetime import datetime
-
         try:
             start = datetime.strptime(start_date, "%Y-%m-%d")
             end = datetime.strptime(end_date, "%Y-%m-%d")
