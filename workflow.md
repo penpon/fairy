@@ -4,7 +4,14 @@
 
 ```mermaid
 flowchart LR
-    Start([開発開始]) --> P1
+    Start([開発開始]) --> P0
+
+    subgraph P0[Phase 0: Steering Documents]
+        direction TB
+        Product[product.md] --> Tech[tech.md] --> Structure[structure.md]
+    end
+
+    P0 --> P1
 
     subgraph P1[Phase 1: 仕様書作成]
         direction TB
@@ -29,15 +36,28 @@ flowchart LR
 
     subgraph P4[Phase 4: AIレビュー & PR]
         direction TB
-        CR[CodeRabbit x3回] --> Push[Push & PR作成]
+        CR[CodeRabbitローカル x3回] --> Push[Push & PR作成]
     end
 
-    P4 --> End([完了])
+    P4 --> P5
 
+    subgraph P5[Phase 5: GitHub Actions]
+        direction TB
+        GH_Test[Tests実行<br/>test/lint/security] --> GH_Review[CodeRabbit & Copilot<br/>自動レビュー]
+        GH_Review --> GH_Fix{テスト失敗?}
+        GH_Fix -->|Yes| GH_Claude[Claude自動修正]
+        GH_Claude --> GH_Test
+        GH_Fix -->|No| GH_Merge[マージ可能]
+    end
+
+    P5 --> End([完了])
+
+    style P0 fill:#fff0f0
     style P1 fill:#e1f5ff
     style P2 fill:#fff4e1
     style P3 fill:#e8f5e1
     style P4 fill:#ffe1f5
+    style P5 fill:#f0f0ff
     style Red fill:#ffcdd2
     style Green fill:#c8e6c9
     style Refactor fill:#bbdefb
