@@ -173,6 +173,8 @@ class TestYahooConfigWithDotenv:
         env_file = tmp_path / ".env"
         env_file.write_text("YAHOO_PHONE_NUMBER=09012345678\n")
         monkeypatch.chdir(tmp_path)
+        # 環境変数をクリア
+        monkeypatch.delenv("YAHOO_PHONE_NUMBER", raising=False)
 
         # When: load_dotenv_file()を呼び出してから設定をロード
         load_dotenv_file()
@@ -232,6 +234,10 @@ class TestProxyConfigWithDotenv:
             "PROXY_PASSWORD=proxy_pass\n"
         )
         monkeypatch.chdir(tmp_path)
+        # 環境変数をクリア
+        monkeypatch.delenv("PROXY_URL", raising=False)
+        monkeypatch.delenv("PROXY_USERNAME", raising=False)
+        monkeypatch.delenv("PROXY_PASSWORD", raising=False)
 
         # When: load_dotenv_file()を呼び出してから設定をロード
         load_dotenv_file()

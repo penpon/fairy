@@ -40,7 +40,12 @@ def load_dotenv_file(dotenv_path: str | None = None) -> bool:
         )
 
     # override=Falseで環境変数が優先される
-    load_dotenv(dotenv_path=dotenv_path, override=False)
+    success = load_dotenv(dotenv_path=dotenv_path, override=False)
+    if not success:
+        raise ValueError(
+            f"Failed to load .env file at: {env_file.absolute()}. "
+            "Please check the file format."
+        )
     return True
 
 
