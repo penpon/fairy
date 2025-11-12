@@ -106,10 +106,10 @@ jobs:
         echo "=== Ruff (リント・インポート順序チェック) ==="
         uv run ruff check modules/ tests/
         echo ""
-        echo "=== Ruff フォーマッター (チェック) ==="
-        uv run ruff format --check modules/ tests/
+        echo "=== Ruff フォーマッター ==="
+        uv run ruff format modules/ tests/
         echo ""
-        echo "✅ すべての静的解析とフォーマットチェックが成功しました"
+        echo "✅ すべての静的解析とフォーマットが成功しました"
 
     - name: フォーマット変更の自動コミット
       if: github.event_name == 'pull_request'
