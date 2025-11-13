@@ -1,9 +1,11 @@
 """Rapras authentication scraper module."""
 
 import asyncio
+from datetime import datetime
 
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 
+from modules.config.constants import MIN_SELLER_PRICE
 from modules.scraper.session_manager import SessionManager
 from modules.utils.logger import get_logger
 
@@ -233,3 +235,134 @@ class RaprasScraper:
     async def _close_browser(self) -> None:
         """ブラウザセッションをクリーンアップ（内部用）"""
         await self.close()
+
+    async def fetch_seller_links(
+        self, start_date: str, end_date: str, min_price: int = MIN_SELLER_PRICE
+    ) -> list[dict]:
+        """集計ページからセラーリンクを取得
+
+        Args:
+            start_date: 開始日（YYYY-MM-DD）
+            end_date: 終了日（YYYY-MM-DD）
+            min_price: 最低落札価格合計（デフォルト10万円）
+
+        Returns:
+            list[dict]: [{"seller_name": str, "total_price": int, "link": str}]
+
+        Raises:
+            RuntimeError: ブラウザが初期化されていない場合、またはログインしていない場合
+            ValueError: 日付形式が不正、または開始日が終了日より後の場合
+        """
+        # 日付形式の検証
+        try:
+            start = datetime.strptime(start_date, "%Y-%m-%d")
+            end = datetime.strptime(end_date, "%Y-%m-%d")
+        except ValueError as e:
+            raise ValueError(f"Invalid date format. Expected YYYY-MM-DD: {e}") from e
+
+        # 日付範囲の検証
+        if start > end:
+            raise ValueError(f"start_date ({start_date}) must be <= end_date ({end_date})")
+
+        # 最低価格の検証
+        if min_price < 0:
+            raise ValueError(f"min_price must be >= 0, got {min_price}")
+
+        if not self.page:
+            raise RuntimeError("Browser not initialized. Call login() first.")
+
+        # ログイン状態の検証
+        if not await self.is_logged_in():
+            raise RuntimeError("Not logged in. Session may have expired.")
+
+        try:
+            # 集計ページURL
+            base_url = self.rapras_url.rstrip("/")
+            url = (
+                f"{base_url}/sum_analyse"
+                f"?target=epsum&updown=down&genre=all"
+                f"&sdate={start_date}&edate={end_date}"
+            )
+
+            logger.info(f"Fetching seller links from {url}")
+            await self.page.goto(url, timeout=self._timeout)
+
+            # セラーテーブルを特定してから行を取得
+            # まず、2列目にリンク（a要素）を持つ最初のテーブルを探す
+            tables = await self.page.query_selector_all("table")
+            seller_table = None
+            for table in tables:
+                # テーブルの最初の行に2列目のリンクがあるかチェック
+                first_row = await table.query_selector("tbody tr")
+                if first_row:
+                    link_elem = await first_row.query_selector("td:nth-child(2) a")
+                    if link_elem:
+                        seller_table = table
+                        break
+
+            if not seller_table:
+                logger.warning("Seller table not found")
+                return []
+
+            # 特定したテーブルから行を取得
+            rows = await seller_table.query_selector_all("tbody tr")
+            logger.info(f"Found {len(rows)} seller rows")
+
+            sellers = []
+            for row in rows:
+                try:
+                    # セラー名を取得（2列目）
+                    seller_name_elem = await row.query_selector("td:nth-child(2)")
+                    if not seller_name_elem:
+                        continue
+                    seller_name = (await seller_name_elem.inner_text()).strip()
+
+                    # 空のセラー名はスキップ
+                    if not seller_name:
+                        logger.debug("Skipping row with empty seller name")
+                        continue
+
+                    # 落札価格合計を取得（5列目）
+                    price_elem = await row.query_selector("td:nth-child(5)")
+                    if not price_elem:
+                        continue
+                    price_text = (await price_elem.inner_text()).strip()
+
+                    # 価格文字列から数値を抽出（例: "150,000円" → 150000）
+                    price_value = int(price_text.replace(",", "").replace("円", ""))
+
+                    # min_price未満はスキップ
+                    if price_value < min_price:
+                        logger.debug(
+                            f"Skipping seller {seller_name} (price: {price_value} < {min_price})"
+                        )
+                        continue
+
+                    # セラーリンクを取得
+                    link_elem = await row.query_selector("td:nth-child(2) a")
+                    if not link_elem:
+                        continue
+                    link = await link_elem.get_attribute("href")
+
+                    # リンクがNullの場合はスキップ
+                    if not link:
+                        logger.warning(f"Skipping seller {seller_name} (no href attribute)")
+                        continue
+
+                    sellers.append(
+                        {"seller_name": seller_name, "total_price": price_value, "link": link}
+                    )
+
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"Failed to parse seller row: {e}")
+                    continue
+
+            logger.info(f"Collected {len(sellers)} sellers with price >= {min_price}")
+            return sellers
+
+        except TimeoutError as e:
+            logger.error(f"Timeout while fetching seller links: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Failed to fetch seller links: {e}")
+            raise

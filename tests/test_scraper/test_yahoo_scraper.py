@@ -4,36 +4,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from modules.scraper.session_manager import SessionManager
 from modules.scraper.yahoo_scraper import LoginError, ProxyAuthenticationError, YahooAuctionScraper
 
 
 class TestYahooAuctionScraper:
     """YahooAuctionScraperのテストクラス"""
-
-    @pytest.fixture
-    def temp_session_dir(self, tmp_path):
-        """一時的なセッションディレクトリを作成"""
-        return tmp_path / "test_sessions"
-
-    @pytest.fixture
-    def session_manager(self, temp_session_dir):
-        """SessionManagerインスタンスを作成"""
-        return SessionManager(session_dir=str(temp_session_dir))
-
-    @pytest.fixture
-    def proxy_config(self):
-        """プロキシ設定を作成"""
-        return {
-            "url": "http://164.70.96.2:3128",
-            "username": "test_proxy_user",
-            "password": "test_proxy_pass",
-        }
-
-    @pytest.fixture
-    def yahoo_scraper(self, session_manager, proxy_config):
-        """YahooAuctionScraperインスタンスを作成"""
-        return YahooAuctionScraper(session_manager=session_manager, proxy_config=proxy_config)
 
     @pytest.fixture
     def mock_playwright(self):
@@ -57,6 +32,14 @@ class TestYahooAuctionScraper:
             {"name": "session", "value": "yahoo123", "domain": ".yahoo.co.jp"}
         ]
 
+        # get_by_role()のモック（Locatorオブジェクトを返す）
+        # get_by_role()は同期関数でLocatorオブジェクトを返す
+        mock_locator = MagicMock()
+        mock_locator.click = AsyncMock()
+        mock_locator.fill = AsyncMock()
+        mock_locator.wait_for = AsyncMock(return_value=mock_locator)
+        mock_page.get_by_role = MagicMock(return_value=mock_locator)
+
         return {
             "async_pw_instance": mock_async_pw_instance,
             "playwright": mock_pw,
@@ -70,7 +53,10 @@ class TestYahooAuctionScraper:
         """正常系: プロキシ経由でログインが成功することを確認"""
         # Given: Playwrightとプロキシがモックされている
         mock_page = mock_playwright["page"]
-        mock_page.query_selector.return_value = MagicMock()  # ログイン状態
+        mock_page.query_selector.return_value = (
+            MagicMock()
+        )  # ログイン状態（ログアウトボタンが存在）
+        mock_page.text_content.return_value = "164.70.96.2"  # プロキシIPアドレス検証用
 
         # SMS入力をモック
         with (
@@ -86,7 +72,6 @@ class TestYahooAuctionScraper:
             # Then: ログインに成功
             assert result is True
             mock_page.goto.assert_called()
-            mock_page.fill.assert_called()
 
             # Then: セッションが保存される
             assert yahoo_scraper.session_manager.session_exists("yahoo")
@@ -161,10 +146,13 @@ class TestYahooAuctionScraper:
             patch.object(yahoo_scraper, "_verify_proxy_connection", return_value=None),
         ):
             # When: ログイン
-            await yahoo_scraper.login(phone_number)
+            result = await yahoo_scraper.login(phone_number)
 
-            # Then: 電話番号が入力される
-            assert mock_page.fill.call_count >= 2  # 電話番号とSMSコード
+            # Then: ログインに成功
+            assert result is True
+            # 電話番号入力はget_by_role().fill()、SMSコード入力はpage.fill()を使用
+            assert mock_page.fill.call_count >= 1  # SMSコード
+            mock_page.get_by_role.assert_called()  # 電話番号入力とボタンクリック
 
         # クリーンアップ
         await yahoo_scraper.close()
@@ -173,13 +161,18 @@ class TestYahooAuctionScraper:
     async def test_custom_yahoo_url(self, session_manager, proxy_config):
         """正常系: カスタムYahoo URLが使用されることを確認"""
         # Given: カスタムURLでYahooAuctionScraperを作成
-        custom_url = "https://custom.yahoo.co.jp/"
+        custom_login_url = "https://custom.yahoo.co.jp/login"
+        custom_auctions_url = "https://custom.yahoo.co.jp/auctions"
         scraper = YahooAuctionScraper(
-            session_manager=session_manager, proxy_config=proxy_config, yahoo_url=custom_url
+            session_manager=session_manager,
+            proxy_config=proxy_config,
+            yahoo_login_url=custom_login_url,
+            yahoo_auctions_url=custom_auctions_url,
         )
 
         # Then: カスタムURLが設定される
-        assert scraper.yahoo_url == custom_url
+        assert scraper.yahoo_login_url == custom_login_url
+        assert scraper.yahoo_auctions_url == custom_auctions_url
 
     @pytest.mark.asyncio
     async def test_proxy_configuration(self, yahoo_scraper, proxy_config):
@@ -201,7 +194,7 @@ class TestYahooAuctionScraper:
         """正常系: 最大リトライ回数が正しく設定されることを確認"""
         # Then: デフォルトのリトライ回数が3
         assert yahoo_scraper._max_retries == 3
-        assert yahoo_scraper._retry_delays == [2, 4, 8]
+        assert yahoo_scraper._retry_delays == [1, 2, 4]
 
     @pytest.mark.asyncio
     async def test_timeout_configuration(self, yahoo_scraper):
@@ -344,6 +337,9 @@ class TestYahooAuctionScraper:
     @pytest.mark.asyncio
     async def test_verify_proxy_connection_success(self, yahoo_scraper, mock_playwright):
         """正常系: プロキシ接続の検証が成功する"""
+        mock_page = mock_playwright["page"]
+        mock_page.text_content.return_value = "164.70.96.2"  # 期待されるIPアドレス
+
         with patch(
             "modules.scraper.yahoo_scraper.async_playwright",
             return_value=mock_playwright["async_pw_instance"],
@@ -390,6 +386,7 @@ class TestYahooAuctionScraper:
         mock_browser = mock_playwright["browser"]
         mock_pw = mock_playwright["playwright"]
 
+        mock_page.text_content.return_value = "164.70.96.2"  # IPアドレス検証用
         mock_page.close.side_effect = RuntimeError("Page close error")
         mock_context.close.side_effect = RuntimeError("Context close error")
         mock_browser.close.side_effect = RuntimeError("Browser close error")
@@ -485,3 +482,95 @@ class TestYahooAuctionScraper:
                 await yahoo_scraper._prompt_for_sms_code()
 
             assert "SMS code input timeout" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_is_logged_in_on_login_page(self, yahoo_scraper, mock_playwright):
+        """異常系: is_logged_inでlogin.yahoo.co.jpにいる場合はFalse"""
+        mock_page = mock_playwright["page"]
+        mock_page.url = "https://login.yahoo.co.jp/config/login"
+
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await yahoo_scraper._launch_browser_with_proxy()
+
+            # When: is_logged_inを呼ぶ
+            result = await yahoo_scraper.is_logged_in()
+
+            # Then: Falseが返される
+            assert result is False
+
+        await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_is_logged_in_on_yahoo_without_login_form(self, yahoo_scraper, mock_playwright):
+        """正常系: is_logged_inでyahoo.co.jpにいてログインフォームがない場合はTrue"""
+        mock_page = mock_playwright["page"]
+        mock_page.url = "https://auctions.yahoo.co.jp/"
+
+        # ログアウトリンクもユーザーメニューもない
+        async def query_selector_side_effect(selector):
+            if "logout" in selector:
+                return None
+            elif selector == "button[aria-label*='ユーザーメニュー']":
+                return None
+            elif selector == 'input[name="login"]':
+                return None  # ログインフォームがない
+            return None
+
+        mock_page.query_selector.side_effect = query_selector_side_effect
+
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await yahoo_scraper._launch_browser_with_proxy()
+
+            # When: is_logged_inを呼ぶ
+            result = await yahoo_scraper.is_logged_in()
+
+            # Then: Trueが返される
+            assert result is True
+
+        await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_extract_seller_name_returns_unknown(self, yahoo_scraper, mock_playwright):
+        """異常系: _extract_seller_nameでセラー名が取得できない場合は"不明なセラー"を返す"""
+        mock_page = mock_playwright["page"]
+
+        # すべてのセレクタがNoneを返す
+        mock_page.query_selector.return_value = None
+
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await yahoo_scraper._launch_browser_with_proxy()
+
+            # When: _extract_seller_nameを呼ぶ
+            result = await yahoo_scraper._extract_seller_name()
+
+            # Then: "不明なセラー"が返される
+            assert result == "不明なセラー"
+
+        await yahoo_scraper.close()
+
+
+class TestRetryBackoffConstants:
+    """modules.config.constantsのリトライバックオフ定数のテスト"""
+
+    def test_retry_backoff_seconds_constant(self):
+        """正常系: RETRY_BACKOFF_SECONDS定数が正しく定義されることを確認
+
+        Given: modules.config.constantsのRETRY_BACKOFF_SECONDS定数
+        When: 定数をインポートする
+        Then: exponential backoff値（1, 2, 4）を含む
+        """
+        # Given/When
+        from modules.config.constants import RETRY_BACKOFF_SECONDS
+
+        # Then
+        assert RETRY_BACKOFF_SECONDS == (1, 2, 4)
+        assert len(RETRY_BACKOFF_SECONDS) == 3

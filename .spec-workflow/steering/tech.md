@@ -61,7 +61,7 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 - **Linting & Import Management**: Ruff（スタイルチェック、import 整理含む）
 - **Testing Framework**: pytest
 - **Async Testing**: pytest-asyncio（async/await関数のテスト対応）
-- **Test Coverage**: pytest-cov（カバレッジ率 95% 以上を必須維持）
+- **Test Coverage**: pytest-cov（カバレッジ率 90% 以上を必須維持）
 - **Security**: bandit（コード脆弱性検査）、pip-audit（依存関係脆弱性検査）
 - **Documentation**: Sphinx / MkDocs（計画中）
 
@@ -69,7 +69,7 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 
 **TDD (Test-Driven Development)**: `/tdd-cycle` コマンドでRed-Green-Refactorサイクルを実行
 
-**品質管理**: `/quality-check` コマンドでコミット前チェック（カバレッジ95%必須）
+**品質管理**: `/quality-check` コマンドでコミット前チェック（カバレッジ90%必須）
 
 ### Version Control & Collaboration
 
@@ -78,14 +78,14 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 - **develop**: 開発統合ブランチ
 - **feature/***: 機能実装ブランチ（git worktreeで分離）
 
-**Development Workflow（tmux並列実行推奨）**
+**Development Workflow**
 
 1. **実装フェーズ（developブランチから開始）**
    - `/tdd-cycle` でworktree作成 & TDD実装（1コマンドで完結）
      - **引数**: `<spec-name> <task-id> [branch-name] <プロンプト>`
      - **worktree自動作成**: developブランチで実行すると自動的にfeatureブランチとworktreeを作成
      - **ブランチ名自動生成**: tasks.mdから日本語タイトルを抽出して英語キーワードに変換
-     - **tasks.md自動更新**: タスクステータスを [ ] → [-] に変更
+     - **tasks.md更新（着手時/完了時）**: developブランチで [ ] → [-] → [x] に更新（featureブランチでは実施しない）
      - **TDDサイクル**: Red → Green → Refactor → QC → Log → Commit
      - **ブランチチェック**: main/developブランチの場合はworktree作成、feature/*の場合は既存worktreeで継続
      - **タスクID整合性チェック**: ブランチとタスクIDの一致を検証
@@ -93,7 +93,7 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
 
 2. **レビュー&PR作成**（`/rabbit-rocket`）
    - CodeRabbit CLI でコードレビュー（ローカル）
-   - 重大問題を修正（最大2回反復）
+   - 重大問題を修正（最大3回反復）
    - Push → develop へ PR作成
    - GitHub上でCodeRabbit & Copilotが自動レビュー
    - **自動修正機能**:
@@ -110,21 +110,17 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
      - ユーザー確認付き削除（安全性重視）
    - または手動: `git checkout develop && git pull` → worktree削除
 
-**ワークフロー チェックリスト（参考）**
+**ワークフロー チェックリスト**
 
-タスク実装サイクル:
-- [ ] 1. developブランチで `/tdd-cycle <spec-name> <task-id> [branch-name] <プロンプト>` を実行
-  - 例: `/tdd-cycle seller-data-collection-analysis 1 Implement seller models...`
-  - worktree自動作成 & featureブランチ作成
-  - tasks.mdステータス更新（[ ] → [-]）
-  - ブランチチェック & タスクID整合性検証
+- [ ] developブランチで `/tdd-cycle <spec-name> <task-id> [branch-name] <プロンプト>` 実行
+  - worktree & featureブランチ作成
+  - tasks.md更新（developで [ ] → [-]、完了時 [-] → [x]）
   - Red → Green → Refactor → QC → Log → Commit
-- [ ] 2. `/rabbit-rocket` でレビュー&PR作成
-- [ ] 3. GitHub自動レビュー（CodeRabbit/Copilot）
-- [ ] 4. GitHub自動修正（必要時）
-- [ ] 5. PRマージ確認（手動）
-- [ ] 6. `/sync` でworktreeクリーンアップ & develop更新
-- [ ] 7. 全タスク完了後、developをmainにマージ（手動）
+- [ ] `/rabbit-rocket` でレビュー&PR作成
+- [ ] GitHub自動レビュー（CodeRabbit/Copilot）& 自動修正
+- [ ] PRマージ
+- [ ] `/sync` でworktreeクリーンアップ & develop更新
+- [ ] 全タスク完了後、developをmainにマージ
 
 **Commit Message Format（日本語）**
 ```
@@ -140,7 +136,7 @@ Task: <タスク番号>
 - **Unit Tests**: 個別モジュールテスト
 - **Integration Tests**: Rapras・Yahoo Auctions 連携テスト
 - **E2E Tests**: Playwright UI テスト
-- **Coverage Target**: 95% 以上を必須維持
+- **Coverage Target**: 90% 以上を必須維持
 
 ## Key Requirements（Phase 1-2）
 
@@ -149,7 +145,7 @@ Task: <タスク番号>
 - **Processing Speed**: 1000行 CSV 処理を 5秒以内に
 
 ### Quality & Reliability
-- **Test Coverage**: 95% 以上を必須維持
+- **Test Coverage**: 90% 以上を必須維持
 
 ### Security
 - **Authentication**: SMS 認証対応

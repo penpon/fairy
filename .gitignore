@@ -41,6 +41,9 @@ htmlcov/
 *.swo
 *~
 
+# Claude Code (use global ~/.claude/ instead)
+.claude/
+
 # Environment Variables
 .env
 
@@ -61,4 +64,4 @@ Thumbs.db
 .spec-workflow/approvals/
 .spec-workflow/user-templates/
 .spec-workflow/templates/
-*Implementation Logs/
+.spec-workflow/specs/*/Implementation Logs/

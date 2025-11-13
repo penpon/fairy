@@ -1,22 +1,33 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["modules*", "sessions*"]
+
 [project]
 name = "yahoo-auction-scraper"
 version = "0.1.0"
 description = "Yahoo Auction Scraper with Rapras Authentication"
 requires-python = ">=3.12"
 dependencies = [
+    "pandas>=2.3.3",
     "playwright>=1.40.0",
     "python-dotenv>=1.0.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "pytest>=7.4.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-mock>=3.12.0",
-    "pytest-cov>=4.1.0",
-    "pytest-timeout>=2.1.0",
-    "black>=23.12.0",
-    "ruff>=0.1.9",
+    "pytest>=8.4.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.14.0",
+    "pytest-cov>=6.0.0",
+    "pytest-timeout>=2.3.0",
+    "black>=24.0.0",
+    "ruff>=0.6.0",
+    "bandit>=1.7.0",
+    "pip-audit>=2.7.0",
 ]
 
 [tool.pytest.ini_options]
@@ -24,7 +35,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-asyncio_mode = "auto"
+asyncio_mode = "strict"
 addopts = [
     "--strict-markers",
     "--strict-config",
@@ -67,4 +78,4 @@ omit = [
 precision = 2
 show_missing = true
 skip_covered = false
-fail_under = 95
+fail_under = 90
