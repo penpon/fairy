@@ -157,32 +157,48 @@ async def test_e2e_partial_failure():
     When: Workflow executes with error handling
     Then: 7 sellers processed successfully
     """
-    # Given: Prepare test data - 10 sellers
-    from modules.analyzer.anime_filter import AnimeFilter
+    # Given: Prepare test data - 10 seller links
+    from main import process_sellers
+    from modules.scraper.session_manager import SessionManager
+    from modules.scraper.yahoo_scraper import YahooAuctionScraper
 
-    sellers = [
+    seller_links = [
         {
             "seller_name": f"セラー{i}",
-            "seller_url": f"https://auctions.yahoo.co.jp/seller{i}",
-            "product_titles": [f"商品{i}-1", f"商品{i}-2"],
+            "link": f"https://auctions.yahoo.co.jp/seller{i}",
         }
         for i in range(1, 11)
     ]
 
-    # Given: Mock Gemini CLI to return "いいえ" (not anime)
-    with patch("subprocess.run") as mock_subprocess:
-        mock_subprocess.return_value = MagicMock(
-            stdout="いいえ、アニメ作品ではありません", stderr="", returncode=0
-        )
+    # Given: Mock YahooAuctionScraper to fail for sellers 3, 6, 9
+    async def mock_fetch_seller_products(seller_url: str):
+        seller_num = int(seller_url.split("seller")[-1])
+        if seller_num in [3, 6, 9]:
+            raise ConnectionError(f"Failed to fetch {seller_url}")
+        return {
+            "seller_name": f"セラー{seller_num}",
+            "seller_url": seller_url,
+            "product_titles": [f"商品{seller_num}-1", f"商品{seller_num}-2"],
+        }
 
-        # When: Simulate Yahoo Auctions failure for sellers 3, 6, 9
-        anime_filter = AnimeFilter()
-        successful_sellers = [s for i, s in enumerate(sellers) if i not in [2, 5, 8]]
-        filtered_sellers = anime_filter.filter_sellers(successful_sellers)
+    # When: Process sellers with error handling
+    with patch.object(
+        YahooAuctionScraper, "fetch_seller_products", new_callable=AsyncMock
+    ) as mock_yahoo:
+        mock_yahoo.side_effect = mock_fetch_seller_products
 
-    # Then: Verify only 7 sellers processed
-    assert len(filtered_sellers) == 7
-    assert all(s.get("is_anime_seller") is False for s in filtered_sellers)
+        session_manager = SessionManager()
+        proxy_config = {
+            "url": "http://proxy.example.com:3128",
+            "username": "user",
+            "password": "pass",
+        }
+        yahoo_scraper = YahooAuctionScraper(session_manager, proxy_config)
+        sellers = await process_sellers(seller_links, yahoo_scraper)
+
+    # Then: Verify only 7 sellers processed successfully
+    assert len(sellers) == 7
+    assert all(s["seller_name"] not in ["セラー3", "セラー6", "セラー9"] for s in sellers)
 
 
 @pytest.mark.asyncio
@@ -291,7 +307,7 @@ async def test_e2e_parallel_processing():
 
 
 @pytest.mark.asyncio
-async def test_e2e_timeout_warning(caplog):
+async def test_e2e_timeout_warning(caplog, monkeypatch, tmp_path):
     """
     Test Scenario 5: Timeout warning
 
@@ -301,18 +317,109 @@ async def test_e2e_timeout_warning(caplog):
     """
     import logging
 
-    # Given: Simulate long processing time
-    # When: Check timeout threshold
-    elapsed_time = 310  # 5 minutes 10 seconds
+    # Given: Mock command line arguments
+    test_args = [
+        "main.py",
+        "--start-date",
+        "2025-08-01",
+        "--end-date",
+        "2025-10-31",
+    ]
+    monkeypatch.setattr("sys.argv", test_args)
 
-    # Simulate timeout warning
-    logger = logging.getLogger("main")
-    if elapsed_time > 300:
-        logger.warning("処理時間が5分を超過しました。")
+    # Given: Mock time.time() to simulate > 300 seconds elapsed
+    # main.py calls time.time() twice: once at start, once at end
+    start_time = 0.0
+    end_time = 310.0
 
-    # Then: Verify warning is logged
-    # Note: In actual implementation, main.py should log this warning
-    assert elapsed_time > 300
+    call_count = {"count": 0}
+
+    def mock_time():
+        call_count["count"] += 1
+        if call_count["count"] == 1:
+            return start_time
+        return end_time
+
+    with patch("time.time", side_effect=mock_time):
+        # Given: Mock all external dependencies
+        with patch("modules.config.settings.load_rapras_config") as mock_rapras_config:
+            with patch("modules.config.settings.load_proxy_config") as mock_proxy_config:
+                with patch("modules.scraper.rapras_scraper.RaprasScraper") as MockRapras:
+                    with patch(
+                        "modules.scraper.yahoo_scraper.YahooAuctionScraper"
+                    ) as MockYahoo:
+                        # Mock config
+                        mock_rapras_config.return_value = MagicMock(
+                            username="user", password="pass"
+                        )
+                        mock_proxy_config.return_value = MagicMock(
+                            url="http://proxy.example.com:3128",
+                            username="proxy_user",
+                            password="proxy_pass",
+                        )
+
+                        # Mock Rapras scraper
+                        mock_rapras_instance = AsyncMock()
+                        mock_rapras_instance.login = AsyncMock()
+                        mock_rapras_instance.fetch_seller_links = AsyncMock(
+                            return_value=[
+                                {
+                                    "seller_name": "セラー1",
+                                    "link": "https://auctions.yahoo.co.jp/seller1",
+                                }
+                            ]
+                        )
+                        mock_rapras_instance.close = AsyncMock()
+                        MockRapras.return_value = mock_rapras_instance
+
+                        # Mock Yahoo scraper
+                        mock_yahoo_instance = AsyncMock()
+                        mock_yahoo_instance.fetch_seller_products = AsyncMock(
+                            return_value={
+                                "seller_name": "セラー1",
+                                "seller_url": "https://auctions.yahoo.co.jp/seller1",
+                                "product_titles": ["商品1"],
+                            }
+                        )
+                        mock_yahoo_instance.close = AsyncMock()
+                        MockYahoo.return_value = mock_yahoo_instance
+
+                        # Mock AnimeFilter and CSVExporter
+                        with patch("modules.analyzer.anime_filter.AnimeFilter") as MockAnime:
+                            with patch("modules.storage.csv_exporter.CSVExporter") as MockCSV:
+                                mock_anime_filter = MagicMock()
+                                mock_anime_filter.filter_sellers = MagicMock(
+                                    return_value=[
+                                        {
+                                            "seller_name": "セラー1",
+                                            "seller_url": "https://auctions.yahoo.co.jp/seller1",
+                                            "is_anime_seller": True,
+                                        }
+                                    ]
+                                )
+                                MockAnime.return_value = mock_anime_filter
+
+                                mock_csv_exporter = MagicMock()
+                                mock_csv_exporter.export_intermediate_csv = MagicMock(
+                                    return_value=str(tmp_path / "intermediate.csv")
+                                )
+                                mock_csv_exporter.export_final_csv = MagicMock(
+                                    return_value=str(tmp_path / "final.csv")
+                                )
+                                MockCSV.return_value = mock_csv_exporter
+
+                                # When: Execute main()
+                                caplog.set_level(logging.WARNING, logger="main")
+                                from main import main
+
+                                await main()
+
+                        # Then: Verify timeout warning was logged
+                        assert any(
+                            "Processing time exceeded" in record.message
+                            and record.levelname == "WARNING"
+                            for record in caplog.records
+                        )
 
 
 @pytest.mark.asyncio
