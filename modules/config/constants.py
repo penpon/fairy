@@ -39,3 +39,11 @@ MAX_RETRY_ATTEMPTS: int = 3
 # Exponential backoff intervals in seconds
 # Pattern: (1s, 2s, 4s) for 1st, 2nd, 3rd retry
 RETRY_BACKOFF_SECONDS: tuple[int, ...] = (1, 2, 4)
+
+
+# ===== Parallel Processing Configuration =====
+# Maximum number of concurrent seller processing tasks
+MAX_CONCURRENT_SELLERS: int = 3
+
+# Timeout warning threshold in seconds (5 minutes)
+TIMEOUT_WARNING_SECONDS: int = 300
