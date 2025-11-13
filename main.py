@@ -133,18 +133,21 @@ async def main() -> None:
     proxy_config = load_proxy_config()
     session_manager = SessionManager()
 
-    # Create scrapers
-    rapras_scraper = RaprasScraper(rapras_config.username, rapras_config.password)
-    yahoo_scraper = YahooAuctionScraper(
-        session_manager=session_manager,
-        proxy_config={
-            "url": proxy_config.url,
-            "username": proxy_config.username,
-            "password": proxy_config.password,
-        },
-    )
+    # Initialize scrapers to None for safe cleanup
+    rapras_scraper = None
+    yahoo_scraper = None
 
     try:
+        # Create scrapers
+        rapras_scraper = RaprasScraper(rapras_config.username, rapras_config.password)
+        yahoo_scraper = YahooAuctionScraper(
+            session_manager=session_manager,
+            proxy_config={
+                "url": proxy_config.url,
+                "username": proxy_config.username,
+                "password": proxy_config.password,
+            },
+        )
         await rapras_scraper.login()
         logger.info("✅ Rapras login successful")
 
@@ -210,8 +213,10 @@ async def main() -> None:
         raise
     finally:
         # Cleanup resources
-        await rapras_scraper.close()
-        await yahoo_scraper.close()
+        if rapras_scraper:
+            await rapras_scraper.close()
+        if yahoo_scraper:
+            await yahoo_scraper.close()
 
 
 if __name__ == "__main__":

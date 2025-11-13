@@ -239,17 +239,14 @@ class TestMain:
         )
         mock_rapras_scraper.close = AsyncMock()
 
-        # 処理を6分（360秒）遅延させる
-        async def slow_fetch(*args, **kwargs):
-            await asyncio.sleep(360)
-            return {
+        mock_yahoo_scraper = AsyncMock()
+        mock_yahoo_scraper.fetch_seller_products = AsyncMock(
+            return_value={
                 "seller_name": "Test",
                 "seller_url": "http://test",
                 "product_titles": ["Product1"],
             }
-
-        mock_yahoo_scraper = AsyncMock()
-        mock_yahoo_scraper.fetch_seller_products = slow_fetch
+        )
         mock_yahoo_scraper.close = AsyncMock()
 
         mock_csv_exporter = MagicMock()
@@ -271,20 +268,26 @@ class TestMain:
             patch("main.load_rapras_config") as mock_load_config,
             patch("main.load_proxy_config") as mock_load_proxy,
             patch("main.SessionManager"),
-            patch("main.logger"),
+            patch("main.logger") as mock_logger,
+            patch("time.time") as mock_time,
         ):
             mock_load_config.return_value = MagicMock(username="test_user", password="test_pass")
             mock_load_proxy.return_value = MagicMock(
                 url="http://proxy", username="proxy_user", password="proxy_pass"
             )
 
+            # Mock time to simulate 6 minutes elapsed (start=0, end=360)
+            mock_time.side_effect = [0, 360]
+
             # When
-            # タイムアウトテストは時間がかかりすぎるため、実際にはテストしない
-            # ここでは、タイムアウト警告のログが呼ばれることを検証するモックを準備するのみ
+            await main()
 
             # Then
-            # このテストはスキップ（実際のタイムアウト検証は統合テストで行う）
-            pass
+            # Verify warning was logged for timeout
+            mock_logger.warning.assert_called_once()
+            warning_call = mock_logger.warning.call_args[0][0]
+            assert "Processing time exceeded" in warning_call
+            assert "5.0 minutes" in warning_call
 
     @pytest.mark.asyncio
     async def test_main_with_rapras_login_failure(self, monkeypatch):
