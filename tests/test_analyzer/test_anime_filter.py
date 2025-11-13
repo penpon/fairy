@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from modules.analyzer.anime_filter import AnimeFilter
+from modules.analyzer.anime_filter import AnimeFilter, GeminiAPIError
 
 
 class TestAnimeFilterInit:
@@ -124,11 +124,9 @@ class TestIsAnimeTitle:
 
         # When: is_anime_title is called
         # Then: Should raise GeminiAPIError
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(GeminiAPIError) as exc_info:
             filter_instance.is_anime_title(title)
-        assert "GeminiAPIError" in str(
-            type(exc_info.value).__name__
-        ) or "CalledProcessError" in str(type(exc_info.value).__name__)
+        assert "Gemini CLI execution failed" in str(exc_info.value)
 
     def test_is_anime_title_with_empty_title(self, mocker):
         """Test is_anime_title with empty title."""
