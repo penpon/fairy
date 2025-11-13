@@ -3,7 +3,6 @@ test_main.py
 main.py CLI entrypoint のユニットテスト
 """
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -104,7 +103,14 @@ class TestParseArgs:
         Then: SystemExitが発生する
         """
         # Given
-        test_args = ["--start-date", "2025-08-01", "--end-date", "2025-10-31", "--min-price", "-100"]
+        test_args = [
+            "--start-date",
+            "2025-08-01",
+            "--end-date",
+            "2025-10-31",
+            "--min-price",
+            "-100",
+        ]
 
         # When / Then
         with patch("sys.argv", ["main.py"] + test_args):
