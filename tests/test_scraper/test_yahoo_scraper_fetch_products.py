@@ -331,3 +331,41 @@ class TestFetchSellerProducts:
 
         # クリーンアップ
         await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_products_proxy_configuration_applied(self, yahoo_scraper, mocker):
+        """正常系: プロキシ設定が正しく適用されることを確認
+
+        Given: プロキシ設定を持つYahooAuctionScraper
+        When: ブラウザが起動される
+        Then: プロキシ設定がブラウザコンテキストに適用される
+        """
+        # Given
+        mock_playwright_obj = AsyncMock()
+        mock_browser = AsyncMock()
+        mock_context = AsyncMock()
+        mock_page = AsyncMock()
+
+        mock_playwright_obj.chromium.launch = AsyncMock(return_value=mock_browser)
+        mock_browser.new_context = AsyncMock(return_value=mock_context)
+        mock_context.new_page = AsyncMock(return_value=mock_page)
+
+        # Mock async_playwright context manager
+        mocker.patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright_obj)),
+        )
+
+        yahoo_scraper.playwright = mock_playwright_obj
+        yahoo_scraper.browser = mock_browser
+
+        # When
+        await yahoo_scraper._launch_browser_with_proxy()
+
+        # Then
+        mock_browser.new_context.assert_called_once()
+        call_kwargs = mock_browser.new_context.call_args.kwargs
+        assert "proxy" in call_kwargs
+        assert call_kwargs["proxy"]["server"] == "http://164.70.96.2:3128"
+        assert call_kwargs["proxy"]["username"] == "test_proxy_user"
+        assert call_kwargs["proxy"]["password"] == "test_proxy_pass"
