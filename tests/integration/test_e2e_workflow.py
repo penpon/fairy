@@ -210,7 +210,7 @@ async def test_e2e_gemini_api_errors(tmp_path):
 
     Given: Gemini CLI raises exceptions
     When: Anime filter processes sellers
-    Then: Processing continues, sellers marked "未判定"
+    Then: Processing continues, sellers marked as False/"いいえ"
     """
     # Given: Prepare test data
     sellers = [
