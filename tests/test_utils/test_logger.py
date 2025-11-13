@@ -29,15 +29,25 @@ class TestLogger:
         # Then: ログレベルがINFO
         assert logger.level == logging.INFO
 
-    def test_get_logger_has_handler(self):
+    def test_get_logger_has_handler(self, tmp_path, monkeypatch):
         """正常系: Loggerにハンドラが設定されることを確認"""
+        # Given: ログディレクトリを設定
+        monkeypatch.setenv("LOG_DIR", str(tmp_path / "logs"))
+
         # Given/When: Loggerを取得
         logger = get_logger("test_handler")
 
-        # Then: ハンドラが設定されている（コンソール+ファイルの2つ）
-        assert len(logger.handlers) == 2
-        assert isinstance(logger.handlers[0], logging.StreamHandler)
-        assert isinstance(logger.handlers[1], logging.FileHandler)
+        try:
+            # Then: ハンドラが設定されている（コンソール+ファイルの2つ）
+            assert len(logger.handlers) == 2
+            assert isinstance(logger.handlers[0], logging.StreamHandler)
+            assert isinstance(logger.handlers[1], logging.FileHandler)
+        finally:
+            # FileHandlerをクリーンアップ
+            for handler in logger.handlers[:]:
+                if isinstance(handler, logging.FileHandler):
+                    handler.close()
+                    logger.removeHandler(handler)
 
     def test_get_logger_handler_format(self):
         """正常系: ログフォーマットにタイムスタンプとモジュール名が含まれることを確認"""
@@ -56,24 +66,34 @@ class TestLogger:
         assert "%(levelname)s" in format_string
         assert "%(message)s" in format_string
 
-    def test_get_logger_no_duplicate_handlers(self):
+    def test_get_logger_no_duplicate_handlers(self, tmp_path, monkeypatch):
         """正常系: 同じLoggerを複数回取得してもハンドラが重複しないことを確認"""
+        # Given: ログディレクトリを設定
+        monkeypatch.setenv("LOG_DIR", str(tmp_path / "logs"))
+
         # Given: 同じモジュール名でLoggerを複数回取得
         module_name = "test_no_duplicate"
 
-        # When: 最初のLogger取得
-        logger1 = get_logger(module_name)
-        handler_count_1 = len(logger1.handlers)
+        try:
+            # When: 最初のLogger取得
+            logger1 = get_logger(module_name)
+            handler_count_1 = len(logger1.handlers)
 
-        # When: 2回目のLogger取得
-        logger2 = get_logger(module_name)
-        handler_count_2 = len(logger2.handlers)
+            # When: 2回目のLogger取得
+            logger2 = get_logger(module_name)
+            handler_count_2 = len(logger2.handlers)
 
-        # Then: 同じLoggerインスタンスが返される
-        assert logger1 is logger2
+            # Then: 同じLoggerインスタンスが返される
+            assert logger1 is logger2
 
-        # Then: ハンドラの数が変わらない（コンソール+ファイルの2つ）
-        assert handler_count_1 == handler_count_2 == 2
+            # Then: ハンドラの数が変わらない（コンソール+ファイルの2つ）
+            assert handler_count_1 == handler_count_2 == 2
+        finally:
+            # FileHandlerをクリーンアップ
+            for handler in logger1.handlers[:]:
+                if isinstance(handler, logging.FileHandler):
+                    handler.close()
+                    logger1.removeHandler(handler)
 
     def test_logger_info_output(self, caplog):
         """正常系: INFOレベルのログが正しく出力されることを確認"""
@@ -129,19 +149,27 @@ class TestLogger:
         # ここではloggerのレベルがINFOであることを確認
         assert logger.level == logging.INFO
 
-    def test_logger_does_not_log_sensitive_data(self, caplog):
-        """セキュリティ: センシティブデータが直接ログに含まれないことを確認"""
+    def test_logger_message_format_best_practices(self, caplog):
+        """正常系: ログメッセージのフォーマットが適切に機能することを確認
+
+        このテストはロギングのベストプラクティスを示します:
+        - センシティブデータ（ユーザー名、パスワードなど）は直接ログに含めない
+        - 汎用的なメッセージを使用し、必要に応じてIDなどで識別する
+        """
         # Given: Loggerを取得
-        logger = get_logger("test_sensitive")
+        logger = get_logger("test_message_format")
 
-        # When: センシティブデータを含むログメッセージ（良い例）
-        # センシティブデータ（例: "test_user"）を直接ログに出力しない
-        with caplog.at_level(logging.INFO, logger="test_sensitive"):
-            logger.info("User authentication successful")  # センシティブデータを含まない
+        # When: 適切なログメッセージを出力（センシティブデータを含まない例）
+        with caplog.at_level(logging.INFO, logger="test_message_format"):
+            logger.info("User authentication successful")  # Good: センシティブデータを含まない
+            logger.info("Processing request for user_id: %s", "12345")  # Good: IDのみを記録
 
-        # Then: ログにセンシティブデータが含まれない
-        assert "test_user" not in caplog.text
+        # Then: ログメッセージが正しく記録される
         assert "User authentication successful" in caplog.text
+        assert "Processing request for user_id: 12345" in caplog.text
+
+        # Then: パラメータ化されたログメッセージが正しく展開される
+        assert len(caplog.records) == 2
 
     def test_logger_with_different_module_names(self):
         """正常系: 異なるモジュール名で複数のLoggerを作成できることを確認"""
@@ -310,11 +338,13 @@ class TestLogger:
         monkeypatch.setenv("LOG_DIR", "   ")
 
         # When: Loggerを取得
-        logger = get_logger("test_whitespace_log_dir")
+        with caplog.at_level(logging.WARNING, logger="test_whitespace_log_dir"):
+            logger = get_logger("test_whitespace_log_dir")
 
         # Then: コンソールハンドラのみが設定される
         assert len(logger.handlers) == 1
         assert isinstance(logger.handlers[0], logging.StreamHandler)
+        assert "ファイルログの初期化に失敗しました" in caplog.text
 
     def test_logger_with_invalid_log_dir_permission(self, tmp_path, monkeypatch, caplog):
         """異常系: LOG_DIRに書き込み権限がない場合にコンソール出力のみにフォールバックすることを確認"""
