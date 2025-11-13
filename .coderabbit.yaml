@@ -14,5 +14,6 @@ reviews:
     - .github/**
     - .venv/**
   review_status: request_changes
+
 chat:
   auto_reply: true
