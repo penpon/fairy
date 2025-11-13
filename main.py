@@ -59,7 +59,28 @@ def parse_args() -> argparse.Namespace:
         default=MIN_SELLER_PRICE,
         help=f"Minimum seller total price (default: {MIN_SELLER_PRICE})",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # Validate date format
+    from datetime import datetime
+
+    try:
+        start = datetime.strptime(args.start_date, "%Y-%m-%d")
+        end = datetime.strptime(args.end_date, "%Y-%m-%d")
+    except ValueError as e:
+        parser.error(f"Invalid date format. Use YYYY-MM-DD: {e}")
+
+    # Validate date range
+    if start > end:
+        parser.error(
+            f"start-date ({args.start_date}) must be before or equal to end-date ({args.end_date})"
+        )
+
+    # Validate min price
+    if args.min_price < 0:
+        parser.error(f"min-price must be non-negative, got {args.min_price}")
+
+    return args
 
 
 async def process_sellers(

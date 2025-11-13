@@ -69,6 +69,48 @@ class TestParseArgs:
             with pytest.raises(SystemExit):
                 parse_args()
 
+    def test_parse_args_invalid_date_format(self):
+        """
+        Given: 日付フォーマットが不正
+        When: parse_argsを呼び出す
+        Then: SystemExitが発生する
+        """
+        # Given
+        test_args = ["--start-date", "2025/08/01", "--end-date", "2025-10-31"]
+
+        # When / Then
+        with patch("sys.argv", ["main.py"] + test_args):
+            with pytest.raises(SystemExit):
+                parse_args()
+
+    def test_parse_args_invalid_date_range(self):
+        """
+        Given: 開始日が終了日より後
+        When: parse_argsを呼び出す
+        Then: SystemExitが発生する
+        """
+        # Given
+        test_args = ["--start-date", "2025-10-31", "--end-date", "2025-08-01"]
+
+        # When / Then
+        with patch("sys.argv", ["main.py"] + test_args):
+            with pytest.raises(SystemExit):
+                parse_args()
+
+    def test_parse_args_negative_min_price(self):
+        """
+        Given: min_priceが負の値
+        When: parse_argsを呼び出す
+        Then: SystemExitが発生する
+        """
+        # Given
+        test_args = ["--start-date", "2025-08-01", "--end-date", "2025-10-31", "--min-price", "-100"]
+
+        # When / Then
+        with patch("sys.argv", ["main.py"] + test_args):
+            with pytest.raises(SystemExit):
+                parse_args()
+
 
 class TestProcessSellers:
     """process_sellers関数のテスト（並行処理）"""
