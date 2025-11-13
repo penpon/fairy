@@ -85,9 +85,8 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
      - **引数**: `<spec-name> <task-id> [branch-name] <プロンプト>`
      - **worktree自動作成**: developブランチで実行すると自動的にfeatureブランチとworktreeを作成
      - **ブランチ名自動生成**: tasks.mdから日本語タイトルを抽出して英語キーワードに変換
-     - **tasks.md自動更新（着手時）**: タスクステータスを [ ] → [-] に変更
+     - **tasks.md更新（着手時/完了時）**: developブランチで [ ] → [-] → [x] に更新（featureブランチでは実施しない）
      - **TDDサイクル**: Red → Green → Refactor → QC → Log → Commit
-     - **tasks.md自動更新（完了時）**: タスクステータスを [-] → [x] に変更してコミット
      - **ブランチチェック**: main/developブランチの場合はworktree作成、feature/*の場合は既存worktreeで継続
      - **タスクID整合性チェック**: ブランチとタスクIDの一致を検証
      - 品質チェック（black, ruff, pytest, coverage）が自動実行される
@@ -111,21 +110,17 @@ Web スクレイピング機能と自動化ツール、データ処理を備え�
      - ユーザー確認付き削除（安全性重視）
    - または手動: `git checkout develop && git pull` → worktree削除
 
-**ワークフロー チェックリスト（参考）**
+**ワークフロー チェックリスト**
 
-タスク実装サイクル:
-- [ ] 1. developブランチで `/tdd-cycle <spec-name> <task-id> [branch-name] <プロンプト>` を実行
-  - 例: `/tdd-cycle seller-data-collection-analysis 1 Implement seller models...`
-  - worktree自動作成 & featureブランチ作成
-  - tasks.mdステータス更新（[ ] → [-]）
-  - ブランチチェック & タスクID整合性検証
+- [ ] developブランチで `/tdd-cycle <spec-name> <task-id> [branch-name] <プロンプト>` 実行
+  - worktree & featureブランチ作成
+  - tasks.md更新（developで [ ] → [-]、完了時 [-] → [x]）
   - Red → Green → Refactor → QC → Log → Commit
-- [ ] 2. `/rabbit-rocket` でレビュー&PR作成
-- [ ] 3. GitHub自動レビュー（CodeRabbit/Copilot）
-- [ ] 4. GitHub自動修正（必要時）
-- [ ] 5. PRマージ確認（手動）
-- [ ] 6. `/sync` でworktreeクリーンアップ & develop更新
-- [ ] 7. 全タスク完了後、developをmainにマージ（手動）
+- [ ] `/rabbit-rocket` でレビュー&PR作成
+- [ ] GitHub自動レビュー（CodeRabbit/Copilot）& 自動修正
+- [ ] PRマージ
+- [ ] `/sync` でworktreeクリーンアップ & develop更新
+- [ ] 全タスク完了後、developをmainにマージ
 
 **Commit Message Format（日本語）**
 ```
