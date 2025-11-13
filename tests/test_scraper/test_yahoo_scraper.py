@@ -581,3 +581,283 @@ class TestYahooAuctionScraper:
             assert result == "不明なセラー"
 
         await yahoo_scraper.close()
+
+
+class TestFetchSellerProducts:
+    """fetch_seller_products method tests with retry logic"""
+
+    @pytest.fixture
+    def temp_session_dir(self, tmp_path):
+        """一時的なセッションディレクトリを作成"""
+        return tmp_path / "test_sessions"
+
+    @pytest.fixture
+    def session_manager(self, temp_session_dir):
+        """SessionManagerインスタンスを作成"""
+        return SessionManager(session_dir=str(temp_session_dir))
+
+    @pytest.fixture
+    def proxy_config(self):
+        """プロキシ設定を作成"""
+        return {
+            "url": "http://164.70.96.2:3128",
+            "username": "test_proxy_user",
+            "password": "test_proxy_pass",
+        }
+
+    @pytest.fixture
+    def yahoo_scraper(self, session_manager, proxy_config):
+        """YahooAuctionScraperインスタンスを作成"""
+        return YahooAuctionScraper(session_manager=session_manager, proxy_config=proxy_config)
+
+    def _setup_mock_page_for_fetch(self, yahoo_scraper, seller_name, products):
+        """共通のモックページセットアップヘルパー
+
+        Args:
+            yahoo_scraper: YahooAuctionScraperインスタンス
+            seller_name: モックセラー名
+            products: モック商品リスト
+
+        Returns:
+            None（yahoo_scraperを直接変更）
+        """
+        mock_page = AsyncMock()
+        mock_page.goto = AsyncMock()
+
+        async def mock_extract_seller_name():
+            return seller_name
+
+        async def mock_extract_product_titles(max_products):
+            return products
+
+        yahoo_scraper.page = mock_page
+        yahoo_scraper._launch_browser_with_proxy = AsyncMock()
+        yahoo_scraper._extract_seller_name = mock_extract_seller_name
+        yahoo_scraper._extract_product_titles = mock_extract_product_titles
+
+    @pytest.mark.asyncio
+    async def test_successful_product_fetch_12_items(self, yahoo_scraper):
+        """Test successful product fetch with 12 items.
+
+        Given: Yahoo Auctions seller page with 12 products
+        When: fetch_seller_products is called
+        Then: Returns dict with seller_name, seller_url, and 12 product_titles
+        """
+        # Given
+        seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
+        expected_products = [f"Product {i}" for i in range(1, 13)]
+        self._setup_mock_page_for_fetch(yahoo_scraper, "Test Seller", expected_products)
+
+        # When
+        result = await yahoo_scraper.fetch_seller_products(seller_url, max_products=12)
+
+        # Then
+        assert result["seller_name"] == "Test Seller"
+        assert result["seller_url"] == seller_url
+        assert len(result["product_titles"]) == 12
+        assert result["product_titles"] == expected_products
+
+    @pytest.mark.asyncio
+    async def test_fetch_with_less_than_12_products(self, yahoo_scraper, caplog):
+        """Test fetch with < 12 products logs warning.
+
+        Given: Yahoo Auctions seller page with 8 products
+        When: fetch_seller_products is called with max_products=12
+        Then: Returns 8 products and logs warning
+        """
+        # Given
+        seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
+        expected_products = [f"Product {i}" for i in range(1, 9)]
+        self._setup_mock_page_for_fetch(yahoo_scraper, "Test Seller", expected_products)
+
+        # When
+        result = await yahoo_scraper.fetch_seller_products(seller_url, max_products=12)
+
+        # Then
+        assert len(result["product_titles"]) == 8
+        assert "商品数が12件未満です（8件）" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_fetch_with_zero_products(self, yahoo_scraper, caplog):
+        """Test fetch with 0 products.
+
+        Given: Yahoo Auctions seller page with no products
+        When: fetch_seller_products is called
+        Then: Returns empty product_titles list and logs warning
+        """
+        # Given
+        seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
+        self._setup_mock_page_for_fetch(yahoo_scraper, "Test Seller", [])
+
+        # When
+        result = await yahoo_scraper.fetch_seller_products(seller_url, max_products=12)
+
+        # Then
+        assert len(result["product_titles"]) == 0
+        assert "商品数が12件未満です（0件）" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_retry_logic_fail_twice_succeed_third(self, yahoo_scraper, mocker):
+        """Test retry logic: fail 2 times, succeed on 3rd attempt.
+
+        Given: Yahoo Auctions connection fails twice then succeeds
+        When: fetch_seller_products is called
+        Then: Retries 2 times with exponential backoff and returns result on 3rd attempt
+        """
+        # Given
+        seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
+        expected_products = [f"Product {i}" for i in range(1, 13)]
+
+        # Mock browser interactions
+        mock_page = AsyncMock()
+        # Fail twice, then succeed
+        call_count = {"count": 0}
+
+        async def mock_goto(url, timeout):
+            call_count["count"] += 1
+            if call_count["count"] <= 2:
+                raise TimeoutError("Connection timeout")
+            # Success on 3rd attempt
+            return None
+
+        mock_page.goto = mock_goto
+
+        # Mock _extract_seller_name
+        async def mock_extract_seller_name():
+            return "Test Seller"
+
+        # Mock _extract_product_titles
+        async def mock_extract_product_titles(max_products):
+            return expected_products
+
+        yahoo_scraper.page = mock_page
+        yahoo_scraper._launch_browser_with_proxy = AsyncMock()
+        yahoo_scraper._extract_seller_name = mock_extract_seller_name
+        yahoo_scraper._extract_product_titles = mock_extract_product_titles
+
+        # Mock sleep to verify backoff timing
+        mock_sleep = mocker.patch("asyncio.sleep", new_callable=AsyncMock)
+
+        # When
+        result = await yahoo_scraper.fetch_seller_products(seller_url, max_products=12)
+
+        # Then
+        assert result["seller_name"] == "Test Seller"
+        assert len(result["product_titles"]) == 12
+        # Verify exponential backoff (2s, 4s)
+        assert mock_sleep.call_count == 2
+        mock_sleep.assert_any_call(2)
+        mock_sleep.assert_any_call(4)
+
+    @pytest.mark.asyncio
+    async def test_connection_error_after_3_retries(self, yahoo_scraper, mocker):
+        """Test ConnectionError after 3 failed retries.
+
+        Given: Yahoo Auctions connection fails 3 times
+        When: fetch_seller_products is called
+        Then: Raises ConnectionError after 3 retries
+        """
+        # Given
+        seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
+
+        # Mock browser interactions to always fail
+        mock_page = AsyncMock()
+        mock_page.goto = AsyncMock(side_effect=TimeoutError("Connection timeout"))
+
+        yahoo_scraper.page = mock_page
+        yahoo_scraper._launch_browser_with_proxy = AsyncMock()
+
+        # Mock sleep to speed up test
+        mocker.patch("asyncio.sleep", new_callable=AsyncMock)
+
+        # When/Then
+        with pytest.raises(
+            ConnectionError, match="Yahoo Auctionsへの接続が3回のリトライ後も失敗しました"
+        ):
+            await yahoo_scraper.fetch_seller_products(seller_url, max_products=12)
+
+    @pytest.mark.asyncio
+    async def test_exponential_backoff_timing(self, yahoo_scraper, mocker):
+        """Test exponential backoff timing (2s, 4s, 8s).
+
+        Given: Yahoo Auctions connection fails 3 times
+        When: fetch_seller_products is called
+        Then: Verifies backoff timing is 2s, 4s for first 2 retries
+        """
+        # Given
+        seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
+
+        # Mock browser interactions to always fail
+        mock_page = AsyncMock()
+        mock_page.goto = AsyncMock(side_effect=TimeoutError("Connection timeout"))
+
+        yahoo_scraper.page = mock_page
+        yahoo_scraper._launch_browser_with_proxy = AsyncMock()
+
+        # Mock sleep to verify backoff timing
+        mock_sleep = mocker.patch("asyncio.sleep", new_callable=AsyncMock)
+
+        # When/Then
+        with pytest.raises(ConnectionError):
+            await yahoo_scraper.fetch_seller_products(seller_url, max_products=12)
+
+        # Then: Verify exponential backoff (2s, 4s)
+        assert mock_sleep.call_count == 2
+        calls = [call.args[0] for call in mock_sleep.call_args_list]
+        assert calls == [2, 4]
+
+    @pytest.mark.asyncio
+    async def test_proxy_configuration_applied(self, yahoo_scraper, mocker):
+        """Test proxy configuration is applied correctly.
+
+        Given: YahooAuctionScraper with proxy configuration
+        When: Browser is launched
+        Then: Proxy settings are applied to browser context
+        """
+        # Given
+        mock_playwright = AsyncMock()
+        mock_browser = AsyncMock()
+        mock_context = AsyncMock()
+        mock_page = AsyncMock()
+
+        mock_playwright.chromium.launch = AsyncMock(return_value=mock_browser)
+        mock_browser.new_context = AsyncMock(return_value=mock_context)
+        mock_context.new_page = AsyncMock(return_value=mock_page)
+
+        # Mock async_playwright context manager
+        mocker.patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright)),
+        )
+
+        yahoo_scraper.playwright = mock_playwright
+        yahoo_scraper.browser = mock_browser
+
+        # When
+        await yahoo_scraper._launch_browser_with_proxy()
+
+        # Then
+        mock_browser.new_context.assert_called_once()
+        call_kwargs = mock_browser.new_context.call_args.kwargs
+        assert "proxy" in call_kwargs
+        assert call_kwargs["proxy"]["server"] == "http://164.70.96.2:3128"
+        assert call_kwargs["proxy"]["username"] == "test_proxy_user"
+        assert call_kwargs["proxy"]["password"] == "test_proxy_pass"
+
+
+class TestRetryBackoffConstants:
+    """Test retry backoff constants from modules.config.constants."""
+
+    def test_retry_backoff_seconds_constant(self):
+        """Test RETRY_BACKOFF_SECONDS constant is correctly defined.
+
+        Given: RETRY_BACKOFF_SECONDS constant in modules.config.constants
+        When: Constant is imported
+        Then: Contains exponential backoff values (1, 2, 4)
+        """
+        # Given/When
+        from modules.config.constants import RETRY_BACKOFF_SECONDS
+
+        # Then
+        assert RETRY_BACKOFF_SECONDS == (1, 2, 4)
+        assert len(RETRY_BACKOFF_SECONDS) == 3
