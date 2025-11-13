@@ -363,7 +363,7 @@ class TestLogger:
                 monkeypatch.setenv("LOG_DIR", str(log_dir))
 
                 # When: Loggerを取得（ファイルログ初期化に失敗）
-                with caplog.at_level(logging.WARNING):
+                with caplog.at_level(logging.WARNING, logger="test_permission_error"):
                     logger = get_logger("test_permission_error")
 
                 # Then: コンソールハンドラのみが設定される
