@@ -1,0 +1,39 @@
+name: Debug Review Event
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "=== GitHub Context ==="
+          echo "$GITHUB_CONTEXT" | jq '.'
+
+      - name: Debug review info
+        run: |
+          echo "=== Review Info ==="
+          echo "Review user login: ${{ github.event.review.user.login }}"
+          echo "Review user type: ${{ github.event.review.user.type }}"
+          echo "Review state: ${{ github.event.review.state }}"
+          echo "PR number: ${{ github.event.pull_request.number }}"
+
+      - name: Check conditions
+        run: |
+          echo "=== Condition Checks ==="
+          if [ "${{ github.event.review.user.login }}" = "coderabbitai[bot]" ]; then
+            echo "✅ Matches CodeRabbit"
+          elif [ "${{ github.event.review.user.login }}" = "copilot-pull-request-reviewer[bot]" ]; then
+            echo "✅ Matches Copilot"
+          else
+            echo "❌ Does not match any expected reviewer"
+            echo "Actual value: ${{ github.event.review.user.login }}"
+          fi
