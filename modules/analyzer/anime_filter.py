@@ -109,6 +109,12 @@ class AnimeFilter:
             # Parse response
             return self._parse_gemini_response(response)
 
+        except FileNotFoundError as e:
+            logger.error("Gemini CLI executable not found. Ensure 'gemini' is installed and on PATH.")
+            raise GeminiAPIError("Gemini CLI executable not found") from e
+        except OSError as e:
+            logger.error(f"Gemini CLI failed to start for '{extracted_title}': {e}")
+            raise GeminiAPIError(f"Gemini CLI failed to start: {e}") from e
         except subprocess.CalledProcessError as e:
             logger.error(f"Gemini CLI execution failed for '{extracted_title}': {e.stderr}")
             raise GeminiAPIError(f"Gemini CLI execution failed: {e.stderr}") from e

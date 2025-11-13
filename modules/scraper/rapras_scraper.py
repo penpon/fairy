@@ -5,6 +5,7 @@ from datetime import datetime
 
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 
+from modules.config.constants import MIN_SELLER_PRICE
 from modules.scraper.session_manager import SessionManager
 from modules.utils.logger import get_logger
 
@@ -236,7 +237,7 @@ class RaprasScraper:
         await self.close()
 
     async def fetch_seller_links(
-        self, start_date: str, end_date: str, min_price: int = 100000
+        self, start_date: str, end_date: str, min_price: int = MIN_SELLER_PRICE
     ) -> list[dict]:
         """集計ページからセラーリンクを取得
 

@@ -159,6 +159,8 @@ class TestIsAnimeTitle:
 
         # Then: Should handle gracefully and return False
         assert result is False
+        # Then: Gemini CLI should not be called for empty titles
+        mock_run.assert_not_called()
 
     def test_is_anime_title_with_single_word(self, mocker):
         """Test is_anime_title with single word title (boundary case)."""

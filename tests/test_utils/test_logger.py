@@ -296,16 +296,13 @@ class TestLogger:
         monkeypatch.setenv("LOG_DIR", "")
 
         # When: Loggerを取得
-        logger = get_logger("test_empty_log_dir")
+        with caplog.at_level(logging.WARNING, logger="test_empty_log_dir"):
+            logger = get_logger("test_empty_log_dir")
 
         # Then: コンソールハンドラのみが設定される（ファイルハンドラなし）
         assert len(logger.handlers) == 1
         assert isinstance(logger.handlers[0], logging.StreamHandler)
-
-        # Then: 警告ログが出力される
-        with caplog.at_level(logging.WARNING):
-            logger.warning("Test warning")
-        assert "ファイルログの初期化に失敗しました" in caplog.text or len(logger.handlers) == 1
+        assert "ファイルログの初期化に失敗しました" in caplog.text
 
     def test_logger_with_whitespace_only_log_dir(self, monkeypatch, caplog):
         """異常系: LOG_DIRが空白のみの場合にコンソール出力のみにフォールバックすることを確認"""

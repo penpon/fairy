@@ -96,14 +96,18 @@ async def process_sellers(
         list[dict]: List of seller data with product titles
     """
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_SELLERS)
+    # Lock to prevent concurrent access to the shared Playwright page
+    scraper_lock = asyncio.Lock()
     results: list[dict[str, Any]] = []
 
     async def process_one_seller(seller: dict[str, Any]) -> dict[str, Any] | None:
-        """Process a single seller with semaphore"""
+        """Process a single seller with semaphore and scraper lock"""
         async with semaphore:
             try:
                 logger.info(f"Processing seller: {seller['seller_name']}")
-                seller_data = await yahoo_scraper.fetch_seller_products(seller["link"])
+                # Serialize access to the shared Playwright page
+                async with scraper_lock:
+                    seller_data = await yahoo_scraper.fetch_seller_products(seller["link"])
                 return seller_data
             except (ConnectionError, TimeoutError, ValueError) as e:
                 logger.warning(f"Failed to process seller {seller['seller_name']}: {e}")
