@@ -8,7 +8,6 @@ from modules.scraper.session_manager import SessionManager
 from modules.scraper.yahoo_scraper import LoginError, ProxyAuthenticationError, YahooAuctionScraper
 
 
-
 @pytest.fixture
 def temp_session_dir(tmp_path):
     """一時的なセッションディレクトリを作成"""

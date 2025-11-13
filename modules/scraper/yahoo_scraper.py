@@ -4,8 +4,8 @@ import asyncio
 
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 
-from modules.scraper.session_manager import SessionManager
 from modules.config.constants import RETRY_BACKOFF_SECONDS
+from modules.scraper.session_manager import SessionManager
 from modules.utils.logger import get_logger
 
 logger = get_logger(__name__)
