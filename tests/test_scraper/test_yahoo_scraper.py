@@ -588,7 +588,7 @@ class TestYahooAuctionScraper:
 
 
 class TestFetchSellerProducts:
-    """fetch_seller_products method tests with retry logic"""
+    """fetch_seller_productsメソッドのリトライロジックテスト"""
 
     def _setup_mock_page_for_fetch(self, yahoo_scraper, seller_name, products):
         """共通のモックページセットアップヘルパー
@@ -617,11 +617,11 @@ class TestFetchSellerProducts:
 
     @pytest.mark.asyncio
     async def test_successful_product_fetch_12_items(self, yahoo_scraper):
-        """Test successful product fetch with 12 items.
+        """正常系: 12件の商品を正常に取得できることを確認
 
-        Given: Yahoo Auctions seller page with 12 products
-        When: fetch_seller_products is called
-        Then: Returns dict with seller_name, seller_url, and 12 product_titles
+        Given: 12件の商品を持つYahoo Auctionsセラーページ
+        When: fetch_seller_productsを呼び出す
+        Then: seller_name、seller_url、12件のproduct_titlesを含むdictが返される
         """
         # Given
         seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
@@ -639,11 +639,11 @@ class TestFetchSellerProducts:
 
     @pytest.mark.asyncio
     async def test_fetch_with_less_than_12_products(self, yahoo_scraper, caplog):
-        """Test fetch with < 12 products logs warning.
+        """正常系: 12件未満の商品で警告ログが出力されることを確認
 
-        Given: Yahoo Auctions seller page with 8 products
-        When: fetch_seller_products is called with max_products=12
-        Then: Returns 8 products and logs warning
+        Given: 8件の商品を持つYahoo Auctionsセラーページ
+        When: fetch_seller_productsをmax_products=12で呼び出す
+        Then: 8件の商品を返し、警告をログ出力する
         """
         # Given
         seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
@@ -659,11 +659,11 @@ class TestFetchSellerProducts:
 
     @pytest.mark.asyncio
     async def test_fetch_with_zero_products(self, yahoo_scraper, caplog):
-        """Test fetch with 0 products.
+        """正常系: 商品が0件の場合の動作を確認
 
-        Given: Yahoo Auctions seller page with no products
-        When: fetch_seller_products is called
-        Then: Returns empty product_titles list and logs warning
+        Given: 商品が0件のYahoo Auctionsセラーページ
+        When: fetch_seller_productsを呼び出す
+        Then: 空のproduct_titlesリストを返し、警告をログ出力する
         """
         # Given
         seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
@@ -678,11 +678,11 @@ class TestFetchSellerProducts:
 
     @pytest.mark.asyncio
     async def test_retry_logic_fail_twice_succeed_third(self, yahoo_scraper, mocker):
-        """Test retry logic: fail 2 times, succeed on 3rd attempt.
+        """正常系: 2回失敗後、3回目のリトライで成功することを確認
 
-        Given: Yahoo Auctions connection fails twice then succeeds
-        When: fetch_seller_products is called
-        Then: Retries 2 times with exponential backoff and returns result on 3rd attempt
+        Given: Yahoo Auctions接続が2回失敗後に成功
+        When: fetch_seller_productsを呼び出す
+        Then: exponential backoff（1s, 2s）で2回リトライし、3回目で結果を返す
         """
         # Given
         seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
@@ -731,11 +731,11 @@ class TestFetchSellerProducts:
 
     @pytest.mark.asyncio
     async def test_connection_error_after_3_retries(self, yahoo_scraper, mocker):
-        """Test ConnectionError after 3 failed retries.
+        """異常系: 3回のリトライ失敗後にConnectionErrorが発生することを確認
 
-        Given: Yahoo Auctions connection fails 3 times
-        When: fetch_seller_products is called
-        Then: Raises ConnectionError after 3 retries
+        Given: Yahoo Auctions接続が3回失敗
+        When: fetch_seller_productsを呼び出す
+        Then: 3回のリトライ後にConnectionErrorが発生
         """
         # Given
         seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
@@ -758,11 +758,11 @@ class TestFetchSellerProducts:
 
     @pytest.mark.asyncio
     async def test_exponential_backoff_timing(self, yahoo_scraper, mocker):
-        """Test exponential backoff timing (1s, 2s, 4s).
+        """正常系: exponential backoffのタイミング（1s, 2s, 4s）が正しいことを確認
 
-        Given: Yahoo Auctions connection fails 3 times
-        When: fetch_seller_products is called
-        Then: Verifies backoff timing is 1s, 2s for first 2 retries
+        Given: Yahoo Auctions接続が3回失敗
+        When: fetch_seller_productsを呼び出す
+        Then: 最初の2回のリトライでbackoffタイミングが1s, 2sであることを検証
         """
         # Given
         seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
@@ -788,11 +788,11 @@ class TestFetchSellerProducts:
 
     @pytest.mark.asyncio
     async def test_proxy_configuration_applied(self, yahoo_scraper, mocker):
-        """Test proxy configuration is applied correctly.
+        """正常系: プロキシ設定が正しく適用されることを確認
 
-        Given: YahooAuctionScraper with proxy configuration
-        When: Browser is launched
-        Then: Proxy settings are applied to browser context
+        Given: プロキシ設定を持つYahooAuctionScraper
+        When: ブラウザが起動される
+        Then: プロキシ設定がブラウザコンテキストに適用される
         """
         # Given
         mock_playwright = AsyncMock()
@@ -826,14 +826,14 @@ class TestFetchSellerProducts:
 
 
 class TestRetryBackoffConstants:
-    """Test retry backoff constants from modules.config.constants."""
+    """modules.config.constantsのリトライバックオフ定数のテスト"""
 
     def test_retry_backoff_seconds_constant(self):
-        """Test RETRY_BACKOFF_SECONDS constant is correctly defined.
+        """正常系: RETRY_BACKOFF_SECONDS定数が正しく定義されることを確認
 
-        Given: RETRY_BACKOFF_SECONDS constant in modules.config.constants
-        When: Constant is imported
-        Then: Contains exponential backoff values (1, 2, 4)
+        Given: modules.config.constantsのRETRY_BACKOFF_SECONDS定数
+        When: 定数をインポートする
+        Then: exponential backoff値（1, 2, 4）を含む
         """
         # Given/When
         from modules.config.constants import RETRY_BACKOFF_SECONDS
