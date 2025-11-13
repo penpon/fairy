@@ -321,3 +321,145 @@ class TestExportErrorHandling:
         # When/Then
         with pytest.raises(IOError, match="CSV書き込み失敗:"):
             exporter.export_final_csv(sellers)
+
+    def test_export_intermediate_csv_none_input(self, tmp_path):
+        """Test ValueError when sellers is None.
+
+        Given: sellers parameter is None
+        When: export_intermediate_csv is called
+        Then: ValueError should be raised
+        """
+        # Given
+        exporter = CSVExporter(output_dir=str(tmp_path) + "/")
+
+        # When/Then
+        with pytest.raises(ValueError, match="sellers cannot be None"):
+            exporter.export_intermediate_csv(None)
+
+    def test_export_final_csv_none_input(self, tmp_path):
+        """Test ValueError when sellers is None for final CSV.
+
+        Given: sellers parameter is None
+        When: export_final_csv is called
+        Then: ValueError should be raised
+        """
+        # Given
+        exporter = CSVExporter(output_dir=str(tmp_path) + "/")
+
+        # When/Then
+        with pytest.raises(ValueError, match="sellers cannot be None"):
+            exporter.export_final_csv(None)
+
+    def test_export_intermediate_csv_missing_seller_name(self, tmp_path):
+        """Test ValueError when seller_name is missing.
+
+        Given: Seller dict without seller_name key
+        When: export_intermediate_csv is called
+        Then: ValueError should be raised with key information
+        """
+        # Given
+        exporter = CSVExporter(output_dir=str(tmp_path) + "/")
+        sellers = [
+            {
+                "seller_url": "https://auctions.yahoo.co.jp/seller",
+                "product_titles": ["商品A"],
+            }
+        ]
+
+        # When/Then
+        with pytest.raises(ValueError, match="missing required key 'seller_name'"):
+            exporter.export_intermediate_csv(sellers)
+
+    def test_export_intermediate_csv_missing_seller_url(self, tmp_path):
+        """Test ValueError when seller_url is missing.
+
+        Given: Seller dict without seller_url key
+        When: export_intermediate_csv is called
+        Then: ValueError should be raised with key information
+        """
+        # Given
+        exporter = CSVExporter(output_dir=str(tmp_path) + "/")
+        sellers = [
+            {
+                "seller_name": "テストセラー",
+                "product_titles": ["商品A"],
+            }
+        ]
+
+        # When/Then
+        with pytest.raises(ValueError, match="missing required key 'seller_url'"):
+            exporter.export_intermediate_csv(sellers)
+
+    def test_export_final_csv_missing_seller_name(self, tmp_path):
+        """Test ValueError when seller_name is missing in final CSV.
+
+        Given: Seller dict without seller_name key
+        When: export_final_csv is called
+        Then: ValueError should be raised with key information
+        """
+        # Given
+        exporter = CSVExporter(output_dir=str(tmp_path) + "/")
+        sellers = [
+            {
+                "seller_url": "https://auctions.yahoo.co.jp/seller",
+                "is_anime_seller": True,
+            }
+        ]
+
+        # When/Then
+        with pytest.raises(ValueError, match="missing required key 'seller_name'"):
+            exporter.export_final_csv(sellers)
+
+    def test_export_final_csv_missing_seller_url(self, tmp_path):
+        """Test ValueError when seller_url is missing in final CSV.
+
+        Given: Seller dict without seller_url key
+        When: export_final_csv is called
+        Then: ValueError should be raised with key information
+        """
+        # Given
+        exporter = CSVExporter(output_dir=str(tmp_path) + "/")
+        sellers = [
+            {
+                "seller_name": "テストセラー",
+                "is_anime_seller": True,
+            }
+        ]
+
+        # When/Then
+        with pytest.raises(ValueError, match="missing required key 'seller_url'"):
+            exporter.export_final_csv(sellers)
+
+    def test_export_intermediate_csv_non_dict_item(self, tmp_path):
+        """Test ValueError when seller item is not a dict.
+
+        Given: sellers list contains non-dict item
+        When: export_intermediate_csv is called
+        Then: ValueError should be raised
+        """
+        # Given
+        exporter = CSVExporter(output_dir=str(tmp_path) + "/")
+        sellers = [
+            "not a dict",
+        ]
+
+        # When/Then
+        with pytest.raises(ValueError, match="must be a dict"):
+            exporter.export_intermediate_csv(sellers)
+
+    def test_export_final_csv_non_dict_item(self, tmp_path):
+        """Test ValueError when seller item is not a dict in final CSV.
+
+        Given: sellers list contains non-dict item
+        When: export_final_csv is called
+        Then: ValueError should be raised
+        """
+        # Given
+        exporter = CSVExporter(output_dir=str(tmp_path) + "/")
+        sellers = [
+            "not a dict",
+        ]
+
+        # When/Then
+        with pytest.raises(ValueError, match="must be a dict"):
+            exporter.export_final_csv(sellers)

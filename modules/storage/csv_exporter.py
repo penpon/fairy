@@ -104,8 +104,21 @@ class CSVExporter:
                 例: "output/sellers_20250101_120000.csv"
 
         Raises:
+            ValueError: sellersがNoneまたは必須キーが欠けている場合
             IOError: CSV書き込み失敗時
         """
+        if sellers is None:
+            raise ValueError("sellers cannot be None")
+
+        # Validate required keys in each seller dict
+        for i, seller in enumerate(sellers):
+            if not isinstance(seller, dict):
+                raise ValueError(f"seller at index {i} must be a dict, got {type(seller).__name__}")
+            if "seller_name" not in seller:
+                raise ValueError(f"seller at index {i} missing required key 'seller_name'")
+            if "seller_url" not in seller:
+                raise ValueError(f"seller at index {i} missing required key 'seller_url'")
+
         filepath = self._generate_filepath()
         df = pd.DataFrame(
             {
@@ -131,8 +144,21 @@ class CSVExporter:
                 例: "output/sellers_20250101_120000_final.csv"
 
         Raises:
+            ValueError: sellersがNoneまたは必須キーが欠けている場合
             IOError: CSV書き込み失敗時
         """
+        if sellers is None:
+            raise ValueError("sellers cannot be None")
+
+        # Validate required keys in each seller dict
+        for i, seller in enumerate(sellers):
+            if not isinstance(seller, dict):
+                raise ValueError(f"seller at index {i} must be a dict, got {type(seller).__name__}")
+            if "seller_name" not in seller:
+                raise ValueError(f"seller at index {i} missing required key 'seller_name'")
+            if "seller_url" not in seller:
+                raise ValueError(f"seller at index {i} missing required key 'seller_url'")
+
         filepath = self._generate_filepath(suffix="_final")
         df = pd.DataFrame(
             {
