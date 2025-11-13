@@ -15,6 +15,7 @@ Test Scenarios:
 import asyncio
 import logging
 import subprocess
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
@@ -56,7 +57,7 @@ async def test_e2e_partial_failure():
     ]
 
     # Given: Mock YahooAuctionScraper to fail for sellers 3, 6, 9
-    async def mock_fetch_seller_products(seller_url: str):
+    async def mock_fetch_seller_products(seller_url: str) -> dict[str, Any]:
         seller_num = int(seller_url.split("seller")[-1])
         if seller_num in [3, 6, 9]:
             raise ConnectionError(f"Failed to fetch {seller_url}")
@@ -120,7 +121,7 @@ async def test_e2e_gemini_api_errors(tmp_path):
     ]
 
     # When: Filter sellers with Gemini errors
-    with patch("subprocess.run") as mock_subprocess:
+    with patch("modules.analyzer.anime_filter.subprocess.run") as mock_subprocess:
         # Mock subprocess.CalledProcessError (which is raised when check=True fails)
         mock_subprocess.side_effect = subprocess.CalledProcessError(
             returncode=1, cmd=["gemini"], stderr="Gemini API error"
@@ -167,7 +168,7 @@ async def test_e2e_parallel_processing():
     concurrent_count = 0
     max_concurrent = 0
 
-    async def mock_fetch(seller_url):
+    async def mock_fetch(seller_url: str) -> dict[str, Any]:
         nonlocal concurrent_count, max_concurrent
         concurrent_count += 1
         max_concurrent = max(max_concurrent, concurrent_count)
@@ -213,17 +214,21 @@ async def test_e2e_parallel_processing():
 
 
 @pytest.fixture
-def mock_main_dependencies(tmp_path):
+def mock_main_dependencies(tmp_path) -> dict[str, Any]:
     """
-    Fixture providing mocked dependencies for main() function.
+    Fixture providing mocked dependencies for the main() function.
 
-    Returns a dictionary containing mocked configurations and instances:
-    - rapras_config: Mock RaprasConfig
-    - proxy_config: Mock ProxyConfig
-    - rapras_instance: AsyncMock RaprasScraper instance
-    - yahoo_instance: AsyncMock YahooAuctionScraper instance
-    - anime_filter: Mock AnimeFilter instance
-    - csv_exporter: Mock CSVExporter instance
+    Args:
+        tmp_path: pytest fixture providing a temporary directory for CSV output.
+
+    Returns:
+        dict[str, Any]: Dictionary containing mocked configurations and instances:
+            - rapras_config: Mock RaprasConfig
+            - proxy_config: Mock ProxyConfig
+            - rapras_instance: AsyncMock RaprasScraper instance
+            - yahoo_instance: AsyncMock YahooAuctionScraper instance
+            - anime_filter: Mock AnimeFilter instance
+            - csv_exporter: Mock CSVExporter instance
     """
     mocks = {
         "rapras_config": MagicMock(username="user", password="pass"),
@@ -317,7 +322,7 @@ async def test_e2e_timeout_warning(caplog, monkeypatch, tmp_path, mock_main_depe
 
     call_count = {"count": 0}
 
-    def mock_time():
+    def mock_time() -> float:
         call_count["count"] += 1
         if call_count["count"] == 1:
             return start_time
