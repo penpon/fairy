@@ -236,9 +236,7 @@ def mock_main_dependencies(tmp_path):
     rapras_instance = AsyncMock()
     rapras_instance.login = AsyncMock()
     rapras_instance.fetch_seller_links = AsyncMock(
-        return_value=[
-            {"seller_name": "セラー1", "link": "https://auctions.yahoo.co.jp/seller1"}
-        ]
+        return_value=[{"seller_name": "セラー1", "link": "https://auctions.yahoo.co.jp/seller1"}]
     )
     rapras_instance.close = AsyncMock()
     mocks["rapras_instance"] = rapras_instance
@@ -270,7 +268,9 @@ def mock_main_dependencies(tmp_path):
 
     # Mock CSVExporter
     csv_exporter = MagicMock()
-    csv_exporter.export_intermediate_csv = MagicMock(return_value=str(tmp_path / "intermediate.csv"))
+    csv_exporter.export_intermediate_csv = MagicMock(
+        return_value=str(tmp_path / "intermediate.csv")
+    )
     csv_exporter.export_final_csv = MagicMock(return_value=str(tmp_path / "final.csv"))
     mocks["csv_exporter"] = csv_exporter
 
@@ -326,11 +326,23 @@ async def test_e2e_timeout_warning(caplog, monkeypatch, tmp_path, mock_main_depe
     # When: Execute main() with mocked dependencies
     with patch("time.time", side_effect=mock_time):
         with patch("main.load_rapras_config", return_value=mock_main_dependencies["rapras_config"]):
-            with patch("main.load_proxy_config", return_value=mock_main_dependencies["proxy_config"]):
-                with patch("main.RaprasScraper", return_value=mock_main_dependencies["rapras_instance"]):
-                    with patch("main.YahooAuctionScraper", return_value=mock_main_dependencies["yahoo_instance"]):
-                        with patch("main.AnimeFilter", return_value=mock_main_dependencies["anime_filter"]):
-                            with patch("main.CSVExporter", return_value=mock_main_dependencies["csv_exporter"]):
+            with patch(
+                "main.load_proxy_config", return_value=mock_main_dependencies["proxy_config"]
+            ):
+                with patch(
+                    "main.RaprasScraper", return_value=mock_main_dependencies["rapras_instance"]
+                ):
+                    with patch(
+                        "main.YahooAuctionScraper",
+                        return_value=mock_main_dependencies["yahoo_instance"],
+                    ):
+                        with patch(
+                            "main.AnimeFilter", return_value=mock_main_dependencies["anime_filter"]
+                        ):
+                            with patch(
+                                "main.CSVExporter",
+                                return_value=mock_main_dependencies["csv_exporter"],
+                            ):
                                 caplog.set_level(logging.WARNING, logger="main")
                                 await main()
 
