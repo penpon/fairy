@@ -74,7 +74,7 @@
   - _Leverage: pytest, modules.storage.models_
   - _Requirements: Non-Functional Requirements (Testability - 90% coverage)_
   - _Prompt: Implement the task for spec seller-data-collection-analysis, first run spec-workflow-guide to get the workflow guide then implement the task: Role: QA Engineer specializing in Python unit testing and pytest | Task: Create comprehensive unit tests for data models following Non-Functional Requirements from .spec-workflow/specs/seller-data-collection-analysis/requirements.md. Follow structure.md testing standards with Given/When/Then format. | Restrictions: Use pytest framework only, Follow Given/When/Then comment structure, Test normal, boundary, and error cases, Do not test Python standard library behavior, Each test must be independent (no shared state) | Leverage: pytest framework, modules.storage.models (Seller, Product) | Requirements: Non-Functional Requirements (Testability - 90% coverage) | Success: Test normal instantiation of Seller and Product, Test boundary values (empty strings, None, empty lists), Test type validation with invalid types, Test is_anime_seller None/True/False states, All tests use Given/When/Then comments, pytest passes with 100% coverage for models.py, Follows structure.md testing standards | Instructions: Before starting implementation, mark this task as in-progress ([-]) in tasks.md. After completing implementation, mark as completed ([x]) in tasks.md._
-- [ ] 11. ユニットテスト作成 (rapras_scraper.py)
+- [-] 11. ユニットテスト作成 (rapras_scraper.py)
   - File: `tests/test_scraper/test_rapras_scraper.py`
   - Purpose: RaprasScraperのモックテスト
   - _Leverage: pytest, pytest-asyncio, pytest-mock, modules.scraper.rapras_scraper_
