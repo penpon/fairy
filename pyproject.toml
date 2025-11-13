@@ -12,6 +12,7 @@ version = "0.1.0"
 description = "Yahoo Auction Scraper with Rapras Authentication"
 requires-python = ">=3.12"
 dependencies = [
+    "pandas>=2.3.3",
     "playwright>=1.40.0",
     "python-dotenv>=1.0.0",
 ]
