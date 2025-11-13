@@ -219,7 +219,7 @@ class TestYahooAuctionScraper:
         """正常系: 最大リトライ回数が正しく設定されることを確認"""
         # Then: デフォルトのリトライ回数が3
         assert yahoo_scraper._max_retries == 3
-        assert yahoo_scraper._retry_delays == [2, 4, 8]
+        assert yahoo_scraper._retry_delays == [1, 2, 4]
 
     @pytest.mark.asyncio
     async def test_timeout_configuration(self, yahoo_scraper):
@@ -744,10 +744,10 @@ class TestFetchSellerProducts:
         # Then
         assert result["seller_name"] == "Test Seller"
         assert len(result["product_titles"]) == 12
-        # Verify exponential backoff (2s, 4s)
+        # Verify exponential backoff (1s, 2s)
         assert mock_sleep.call_count == 2
+        mock_sleep.assert_any_call(1)
         mock_sleep.assert_any_call(2)
-        mock_sleep.assert_any_call(4)
 
     @pytest.mark.asyncio
     async def test_connection_error_after_3_retries(self, yahoo_scraper, mocker):
@@ -778,11 +778,11 @@ class TestFetchSellerProducts:
 
     @pytest.mark.asyncio
     async def test_exponential_backoff_timing(self, yahoo_scraper, mocker):
-        """Test exponential backoff timing (2s, 4s, 8s).
+        """Test exponential backoff timing (1s, 2s, 4s).
 
         Given: Yahoo Auctions connection fails 3 times
         When: fetch_seller_products is called
-        Then: Verifies backoff timing is 2s, 4s for first 2 retries
+        Then: Verifies backoff timing is 1s, 2s for first 2 retries
         """
         # Given
         seller_url = "https://auctions.yahoo.co.jp/seller/test_seller"
@@ -801,10 +801,10 @@ class TestFetchSellerProducts:
         with pytest.raises(ConnectionError):
             await yahoo_scraper.fetch_seller_products(seller_url, max_products=12)
 
-        # Then: Verify exponential backoff (2s, 4s)
+        # Then: Verify exponential backoff (1s, 2s)
         assert mock_sleep.call_count == 2
         calls = [call.args[0] for call in mock_sleep.call_args_list]
-        assert calls == [2, 4]
+        assert calls == [1, 2]
 
     @pytest.mark.asyncio
     async def test_proxy_configuration_applied(self, yahoo_scraper, mocker):
