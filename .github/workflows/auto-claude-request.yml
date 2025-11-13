@@ -49,7 +49,7 @@ jobs:
 
             // Claudeへのリクエストコメント投稿
             const commentBody = [
-              '@claude 必要であれば上記レビュー対応をお願いします',
+              '@claude 必要であればレビュー対応をお願いします',
               '',
               `**レビュアー**: ${reviewerName}`,
               `**レビューコメント**: ${reviewUrl}`
