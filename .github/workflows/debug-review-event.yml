@@ -32,7 +32,9 @@ jobs:
           if [ "${{ github.event.review.user.login }}" = "coderabbitai[bot]" ]; then
             echo "✅ Matches CodeRabbit"
           elif [ "${{ github.event.review.user.login }}" = "copilot-pull-request-reviewer[bot]" ]; then
-            echo "✅ Matches Copilot"
+            echo "✅ Matches Copilot (full name)"
+          elif [ "${{ github.event.review.user.login }}" = "Copilot" ]; then
+            echo "✅ Matches Copilot (short name)"
           else
             echo "❌ Does not match any expected reviewer"
             echo "Actual value: ${{ github.event.review.user.login }}"
@@ -57,7 +59,8 @@ jobs:
               '',
               '**Condition Checks**:',
               '- CodeRabbit match: ' + (reviewerLogin === 'coderabbitai[bot]' ? '✅' : '❌'),
-              '- Copilot match: ' + (reviewerLogin === 'copilot-pull-request-reviewer[bot]' ? '✅' : '❌'),
+              '- Copilot match (full): ' + (reviewerLogin === 'copilot-pull-request-reviewer[bot]' ? '✅' : '❌'),
+              '- Copilot match (short): ' + (reviewerLogin === 'Copilot' ? '✅' : '❌'),
             ].join('\n');
 
             await github.rest.issues.createComment({

@@ -7,7 +7,7 @@ on:
 jobs:
   request-claude-review:
     # CodeRabbitまたはCopilotからのレビューの場合のみ実行
-    if: contains(fromJSON('["coderabbitai[bot]", "copilot-pull-request-reviewer[bot]"]'), github.event.review.user.login)
+    if: contains(fromJSON('["coderabbitai[bot]", "copilot-pull-request-reviewer[bot]", "Copilot"]'), github.event.review.user.login)
 
     runs-on: ubuntu-latest
     permissions:
@@ -43,7 +43,9 @@ jobs:
             // レビュアー名の判定
             const reviewerName = reviewerLogin === 'coderabbitai[bot]'
               ? 'CodeRabbit'
-              : 'Copilot';
+              : (reviewerLogin === 'Copilot' || reviewerLogin === 'copilot-pull-request-reviewer[bot]')
+              ? 'Copilot'
+              : 'Unknown';
 
             // Claudeへのリクエストコメント投稿
             const commentBody = [
