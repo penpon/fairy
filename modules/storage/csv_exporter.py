@@ -87,7 +87,7 @@ class CSVExporter:
             return filepath
         except Exception as e:
             logger.error(f"CSV書き込み失敗: {filepath}, エラー: {e}")
-            raise OSError(f"CSV書き込み失敗: {filepath}") from e
+            raise IOError(f"CSV書き込み失敗: {filepath}") from e
 
     def export_intermediate_csv(self, sellers: list[dict]) -> str:
         """Export intermediate CSV with "未判定" for is_anime_seller.
