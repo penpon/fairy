@@ -13,10 +13,18 @@ Test Scenarios:
 """
 
 import asyncio
+import logging
+import subprocess
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
 import pytest
+
+from main import main, process_sellers
+from modules.analyzer.anime_filter import AnimeFilter
+from modules.scraper.session_manager import SessionManager
+from modules.scraper.yahoo_scraper import YahooAuctionScraper
+from modules.storage.csv_exporter import CSVExporter
 
 
 @pytest.mark.asyncio
@@ -158,10 +166,6 @@ async def test_e2e_partial_failure():
     Then: 7 sellers processed successfully
     """
     # Given: Prepare test data - 10 seller links
-    from main import process_sellers
-    from modules.scraper.session_manager import SessionManager
-    from modules.scraper.yahoo_scraper import YahooAuctionScraper
-
     seller_links = [
         {
             "seller_name": f"セラー{i}",
@@ -211,9 +215,6 @@ async def test_e2e_gemini_api_errors(tmp_path):
     Then: Processing continues, sellers marked "未判定"
     """
     # Given: Prepare test data
-    from modules.analyzer.anime_filter import AnimeFilter
-    from modules.storage.csv_exporter import CSVExporter
-
     sellers = [
         {
             "seller_name": "セラー1",
@@ -223,8 +224,6 @@ async def test_e2e_gemini_api_errors(tmp_path):
     ]
 
     # When: Filter sellers with Gemini errors
-    import subprocess
-
     with patch("subprocess.run") as mock_subprocess:
         # Mock subprocess.CalledProcessError (which is raised when check=True fails)
         mock_subprocess.side_effect = subprocess.CalledProcessError(
@@ -275,10 +274,6 @@ async def test_e2e_parallel_processing():
         }
 
     # When: Process with semaphore
-    from main import process_sellers
-    from modules.scraper.session_manager import SessionManager
-    from modules.scraper.yahoo_scraper import YahooAuctionScraper
-
     seller_links = [
         {
             "seller_name": f"セラー{i}",
@@ -315,8 +310,6 @@ async def test_e2e_timeout_warning(caplog, monkeypatch, tmp_path):
     When: main() executes
     Then: Warning logged, processing continues
     """
-    import logging
-
     # Given: Mock command line arguments
     test_args = [
         "main.py",
@@ -342,12 +335,10 @@ async def test_e2e_timeout_warning(caplog, monkeypatch, tmp_path):
 
     with patch("time.time", side_effect=mock_time):
         # Given: Mock all external dependencies
-        with patch("modules.config.settings.load_rapras_config") as mock_rapras_config:
-            with patch("modules.config.settings.load_proxy_config") as mock_proxy_config:
-                with patch("modules.scraper.rapras_scraper.RaprasScraper") as MockRapras:
-                    with patch(
-                        "modules.scraper.yahoo_scraper.YahooAuctionScraper"
-                    ) as MockYahoo:
+        with patch("main.load_rapras_config") as mock_rapras_config:
+            with patch("main.load_proxy_config") as mock_proxy_config:
+                with patch("main.RaprasScraper") as MockRapras:
+                    with patch("main.YahooAuctionScraper") as MockYahoo:
                         # Mock config
                         mock_rapras_config.return_value = MagicMock(
                             username="user", password="pass"
@@ -385,8 +376,8 @@ async def test_e2e_timeout_warning(caplog, monkeypatch, tmp_path):
                         MockYahoo.return_value = mock_yahoo_instance
 
                         # Mock AnimeFilter and CSVExporter
-                        with patch("modules.analyzer.anime_filter.AnimeFilter") as MockAnime:
-                            with patch("modules.storage.csv_exporter.CSVExporter") as MockCSV:
+                        with patch("main.AnimeFilter") as MockAnime:
+                            with patch("main.CSVExporter") as MockCSV:
                                 mock_anime_filter = MagicMock()
                                 mock_anime_filter.filter_sellers = MagicMock(
                                     return_value=[
@@ -410,8 +401,6 @@ async def test_e2e_timeout_warning(caplog, monkeypatch, tmp_path):
 
                                 # When: Execute main()
                                 caplog.set_level(logging.WARNING, logger="main")
-                                from main import main
-
                                 await main()
 
                         # Then: Verify timeout warning was logged
@@ -432,8 +421,6 @@ async def test_e2e_csv_format_verification(tmp_path):
     Then: Intermediate CSV contains "未判定", Final CSV contains "はい"/"いいえ"
     """
     # Given: Prepare test data
-    from modules.storage.csv_exporter import CSVExporter
-
     intermediate_sellers = [
         {
             "seller_name": "セラー1",
