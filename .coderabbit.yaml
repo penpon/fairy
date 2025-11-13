@@ -16,5 +16,8 @@ reviews:
     - .venv/**
   review_status: true
 
+github-checks:
+  timeout_ms: 900000
+
 chat:
   auto_reply: true
