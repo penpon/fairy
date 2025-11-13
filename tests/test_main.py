@@ -260,7 +260,7 @@ class TestMain:
             await main()
 
             # Then
-            mock_rapras_scraper.login.assert_called_once()
+            mock_rapras_scraper.login.assert_called_once_with("test_user", "test_pass")
             mock_rapras_scraper.fetch_seller_links.assert_called_once_with(
                 "2025-08-01", "2025-10-31", 100000
             )
@@ -373,6 +373,6 @@ class TestMain:
                 await main()
 
             # Then
-            mock_rapras_scraper.login.assert_called_once()
+            mock_rapras_scraper.login.assert_called_once_with("test_user", "test_pass")
             mock_rapras_scraper.close.assert_called_once()
             mock_yahoo_scraper.close.assert_called_once()

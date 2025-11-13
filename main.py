@@ -13,6 +13,7 @@ Workflow:
 import argparse
 import asyncio
 import time
+from datetime import datetime
 from typing import Any
 
 from modules.analyzer.anime_filter import AnimeFilter
@@ -62,8 +63,6 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     # Validate date format
-    from datetime import datetime
-
     try:
         start = datetime.strptime(args.start_date, "%Y-%m-%d")
         end = datetime.strptime(args.end_date, "%Y-%m-%d")
@@ -106,19 +105,19 @@ async def process_sellers(
                 logger.info(f"Processing seller: {seller['seller_name']}")
                 seller_data = await yahoo_scraper.fetch_seller_products(seller["link"])
                 return seller_data
-            except Exception as e:
+            except (ConnectionError, TimeoutError, ValueError) as e:
                 logger.warning(f"Failed to process seller {seller['seller_name']}: {e}")
                 return None
 
     # Create tasks for all sellers
     tasks = [process_one_seller(seller) for seller in seller_links]
 
-    # Run tasks concurrently with return_exceptions=True
-    completed_results = await asyncio.gather(*tasks, return_exceptions=True)
+    # Run tasks concurrently
+    completed_results = await asyncio.gather(*tasks)
 
-    # Filter out None and Exception results
+    # Filter out None results
     for result in completed_results:
-        if result is not None and not isinstance(result, Exception):
+        if result is not None:
             results.append(result)
 
     return results
@@ -129,13 +128,12 @@ async def main() -> None:
     Main workflow orchestration
 
     Workflow:
-    1. Parse CLI arguments
-    2. Rapras login
-    3. Fetch seller links from Rapras
-    4. Parallel fetch products from Yahoo Auctions (max 3 concurrent)
-    5. Export intermediate CSV
-    6. Anime filter
-    7. Export final CSV
+    1. Initialize scrapers
+    2. Fetch seller links from Rapras
+    3. Parallel fetch products from Yahoo Auctions (max 3 concurrent)
+    4. Export intermediate CSV
+    5. Anime filter
+    6. Export final CSV
     """
     start_time = time.time()
 
@@ -160,7 +158,7 @@ async def main() -> None:
 
     try:
         # Create scrapers
-        rapras_scraper = RaprasScraper(rapras_config.username, rapras_config.password)
+        rapras_scraper = RaprasScraper(session_manager=session_manager)
         yahoo_scraper = YahooAuctionScraper(
             session_manager=session_manager,
             proxy_config={
@@ -169,7 +167,7 @@ async def main() -> None:
                 "password": proxy_config.password,
             },
         )
-        await rapras_scraper.login()
+        await rapras_scraper.login(rapras_config.username, rapras_config.password)
         logger.info("✅ Rapras login successful")
 
         # Step 3: Fetch seller links
