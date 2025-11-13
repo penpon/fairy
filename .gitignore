@@ -40,6 +40,9 @@ htmlcov/
 *.swo
 *~
 
+# Claude Code (use global ~/.claude/ instead)
+.claude/
+
 # Environment Variables
 .env
 
