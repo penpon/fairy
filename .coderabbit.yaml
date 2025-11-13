@@ -4,7 +4,8 @@ reviews:
   target_branches:
     - main
     - develop
-  auto_review: true
+  auto_review:
+    enabled: true
   auto_fix: true
   timeout: 900000
   exclude_patterns:
@@ -13,7 +14,7 @@ reviews:
     - "*.txt"
     - .github/**
     - .venv/**
-  review_status: request_changes
+  review_status: true
 
 chat:
   auto_reply: true
