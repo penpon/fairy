@@ -8,7 +8,7 @@ jobs:
   debug:
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: read
+      pull-requests: write
 
     steps:
       - name: Dump GitHub context
@@ -37,3 +37,32 @@ jobs:
             echo "❌ Does not match any expected reviewer"
             echo "Actual value: ${{ github.event.review.user.login }}"
           fi
+
+      - name: Post debug info to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reviewerLogin = '${{ github.event.review.user.login }}';
+            const reviewerType = '${{ github.event.review.user.type }}';
+            const reviewState = '${{ github.event.review.state }}';
+            const prNumber = ${{ github.event.pull_request.number }};
+
+            const comment = [
+              '### 🔍 Debug Review Event',
+              '',
+              '**Reviewer Login**: `' + reviewerLogin + '`',
+              '**Reviewer Type**: `' + reviewerType + '`',
+              '**Review State**: `' + reviewState + '`',
+              '**PR Number**: `' + prNumber + '`',
+              '',
+              '**Condition Checks**:',
+              '- CodeRabbit match: ' + (reviewerLogin === 'coderabbitai[bot]' ? '✅' : '❌'),
+              '- Copilot match: ' + (reviewerLogin === 'copilot-pull-request-reviewer[bot]' ? '✅' : '❌'),
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: comment
+            });

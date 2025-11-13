@@ -7,9 +7,7 @@ on:
 jobs:
   request-claude-review:
     # CodeRabbitまたはCopilotからのレビューの場合のみ実行
-    if: |
-      github.event.review.user.login == 'coderabbitai[bot]' ||
-      github.event.review.user.login == 'copilot-pull-request-reviewer[bot]'
+    if: contains(fromJSON('["coderabbitai[bot]", "copilot-pull-request-reviewer[bot]"]'), github.event.review.user.login)
 
     runs-on: ubuntu-latest
     permissions:
