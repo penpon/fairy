@@ -147,8 +147,6 @@ async def test_e2e_full_success_workflow_via_main(tmp_path, monkeypatch):
             mock_subprocess.side_effect = gemini_responses
 
             # When: Execute main()
-            from main import main
-
             await main()
 
     # Then: Verify CSVs are created (implementation already handles CSV creation)
