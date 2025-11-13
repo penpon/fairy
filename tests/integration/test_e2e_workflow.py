@@ -5,11 +5,11 @@ This module tests the full workflow from Rapras login to final CSV export,
 mocking external services while testing real module integration.
 
 Test Scenarios:
-1. Full success workflow: Rapras → Yahoo Auctions → Gemini → CSV
-2. Partial failure: Some sellers fail Yahoo Auctions
-3. Gemini API errors: Continue processing despite errors
-4. Parallel processing: Max 3 concurrent sellers
-5. Timeout warning: Processing time > 5 minutes
+1. Partial failure: Some sellers fail Yahoo Auctions
+2. Gemini API errors: Continue processing despite errors
+3. Parallel processing: Max 3 concurrent sellers
+4. Timeout warning: Processing time > 5 minutes
+5. CSV format verification: Intermediate vs Final CSV structure
 """
 
 import asyncio
@@ -28,140 +28,23 @@ from modules.storage.csv_exporter import CSVExporter
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(
-    reason="Complex integration test requiring extensive Playwright mocking - covered by other tests"
-)
-async def test_e2e_full_success_workflow_via_main(tmp_path, monkeypatch):
-    """
-    Test Scenario 1: Full success workflow via main()
-
-    Given: Mocked external services (Playwright, subprocess)
-    When: main() is executed
-    Then: Intermediate and final CSVs are created with correct data
-    """
-    # Given: Mock command line arguments
-    test_args = [
-        "main.py",
-        "--start-date",
-        "2025-08-01",
-        "--end-date",
-        "2025-10-31",
-    ]
-    monkeypatch.setattr("sys.argv", test_args)
-
-    # Given: Mock Playwright for Rapras
-    mock_page = AsyncMock()
-    mock_page.goto = AsyncMock()
-    mock_page.fill = AsyncMock()
-    mock_page.click = AsyncMock()
-    mock_page.wait_for_selector = AsyncMock()
-    mock_page.url = "https://www.rapras.jp/mypage"
-
-    # Mock seller table rows
-    mock_row1 = MagicMock()
-    mock_row1_cells = [
-        MagicMock(inner_text=AsyncMock(return_value="セラー1")),
-        MagicMock(inner_text=AsyncMock(return_value="150000")),
-        MagicMock(
-            query_selector=MagicMock(
-                return_value=MagicMock(
-                    get_attribute=AsyncMock(return_value="https://auctions.yahoo.co.jp/seller1")
-                )
-            )
-        ),
-    ]
-    mock_row1.query_selector_all = AsyncMock(return_value=mock_row1_cells)
-
-    mock_row2 = MagicMock()
-    mock_row2_cells = [
-        MagicMock(inner_text=AsyncMock(return_value="セラー2")),
-        MagicMock(inner_text=AsyncMock(return_value="200000")),
-        MagicMock(
-            query_selector=MagicMock(
-                return_value=MagicMock(
-                    get_attribute=AsyncMock(return_value="https://auctions.yahoo.co.jp/seller2")
-                )
-            )
-        ),
-    ]
-    mock_row2.query_selector_all = AsyncMock(return_value=mock_row2_cells)
-
-    mock_page.query_selector_all = AsyncMock(return_value=[mock_row1, mock_row2])
-
-    mock_context = AsyncMock()
-    mock_context.new_page = AsyncMock(return_value=mock_page)
-    mock_context.cookies = AsyncMock(return_value=[])
-    mock_context.close = AsyncMock()
-
-    mock_browser = AsyncMock()
-    mock_browser.new_context = AsyncMock(return_value=mock_context)
-    mock_browser.close = AsyncMock()
-
-    mock_playwright = AsyncMock()
-    mock_playwright.chromium.launch = AsyncMock(return_value=mock_browser)
-    mock_playwright.stop = AsyncMock()
-
-    mock_playwright_instance = AsyncMock()
-    mock_playwright_instance.start = AsyncMock(return_value=mock_playwright)
-
-    # Given: Mock Playwright for Yahoo Auctions
-    mock_yahoo_page1 = AsyncMock()
-    mock_yahoo_page1.goto = AsyncMock()
-    mock_yahoo_page1.url = "https://auctions.yahoo.co.jp/seller1"
-
-    mock_yahoo_products1 = [
-        MagicMock(inner_text=AsyncMock(return_value="らんまちゃん らんま A4 ポスター")),
-        MagicMock(inner_text=AsyncMock(return_value="商品2")),
-    ]
-    mock_yahoo_page1.query_selector_all = AsyncMock(return_value=mock_yahoo_products1)
-
-    mock_yahoo_seller1 = MagicMock(inner_text=AsyncMock(return_value="セラー1"))
-    mock_yahoo_page1.query_selector = AsyncMock(return_value=mock_yahoo_seller1)
-
-    mock_yahoo_page2 = AsyncMock()
-    mock_yahoo_page2.goto = AsyncMock()
-    mock_yahoo_page2.url = "https://auctions.yahoo.co.jp/seller2"
-
-    mock_yahoo_products2 = [
-        MagicMock(inner_text=AsyncMock(return_value="iPhone ケース")),
-        MagicMock(inner_text=AsyncMock(return_value="商品4")),
-    ]
-    mock_yahoo_page2.query_selector_all = AsyncMock(return_value=mock_yahoo_products2)
-
-    mock_yahoo_seller2 = MagicMock(inner_text=AsyncMock(return_value="セラー2"))
-    mock_yahoo_page2.query_selector = AsyncMock(return_value=mock_yahoo_seller2)
-
-    page_calls = [mock_page, mock_yahoo_page1, mock_yahoo_page2]
-    mock_context.new_page = AsyncMock(side_effect=page_calls)
-
-    # Given: Mock Gemini CLI
-    gemini_responses = [
-        MagicMock(stdout="はい、アニメ作品です", stderr="", returncode=0),
-        MagicMock(stdout="いいえ、アニメ作品ではありません", stderr="", returncode=0),
-    ]
-
-    with patch("modules.scraper.rapras_scraper.async_playwright") as mock_playwright_func:
-        mock_playwright_func.return_value = mock_playwright_instance
-
-        with patch("subprocess.run") as mock_subprocess:
-            mock_subprocess.side_effect = gemini_responses
-
-            # When: Execute main()
-            await main()
-
-    # Then: Verify CSVs are created (implementation already handles CSV creation)
-    # Note: This test currently validates the workflow runs without errors
-    # CSV verification would require checking the output/ directory
-
-
-@pytest.mark.asyncio
 async def test_e2e_partial_failure():
     """
-    Test Scenario 2: Partial failure
+    Test Scenario 1: Partial failure during seller data collection.
 
-    Given: 10 sellers, 3 fail Yahoo Auctions
-    When: Workflow executes with error handling
-    Then: 7 sellers processed successfully
+    Verifies that the workflow gracefully handles Yahoo Auctions connection failures
+    for some sellers while successfully processing others. This ensures the system's
+    resilience and error recovery capabilities.
+
+    Given: 10 sellers, 3 fail Yahoo Auctions connection
+    When: process_sellers() executes with error handling
+    Then: 7 sellers are processed successfully and 3 failures are logged
+
+    Args:
+        None (uses mocked YahooAuctionScraper)
+
+    Returns:
+        None (assertions verify expected behavior)
     """
     # Given: Prepare test data - 10 seller links
     seller_links = [
@@ -196,7 +79,11 @@ async def test_e2e_partial_failure():
             "password": "pass",
         }
         yahoo_scraper = YahooAuctionScraper(session_manager, proxy_config)
-        sellers = await process_sellers(seller_links, yahoo_scraper)
+
+        try:
+            sellers = await process_sellers(seller_links, yahoo_scraper)
+        finally:
+            await yahoo_scraper.close()
 
     # Then: Verify only 7 sellers processed successfully
     assert len(sellers) == 7
@@ -206,11 +93,22 @@ async def test_e2e_partial_failure():
 @pytest.mark.asyncio
 async def test_e2e_gemini_api_errors(tmp_path):
     """
-    Test Scenario 3: Gemini API errors
+    Test Scenario 2: Gemini API error handling during anime filtering.
 
-    Given: Gemini CLI raises exceptions
-    When: Anime filter processes sellers
-    Then: Processing continues, sellers marked as False/"いいえ"
+    Validates that when Gemini CLI encounters errors (e.g., API rate limits,
+    network issues), the workflow continues processing and marks affected
+    sellers as non-anime (False) rather than failing the entire pipeline.
+
+    Given: Gemini CLI raises CalledProcessError exceptions
+    When: AnimeFilter.filter_sellers() processes sellers
+    Then: Processing continues without interruption, and sellers are marked
+          as is_anime_seller=False and exported as "いいえ" in CSV
+
+    Args:
+        tmp_path: pytest fixture providing temporary directory for CSV output
+
+    Returns:
+        None (assertions verify expected behavior)
     """
     # Given: Prepare test data
     sellers = [
@@ -248,11 +146,22 @@ async def test_e2e_gemini_api_errors(tmp_path):
 @pytest.mark.asyncio
 async def test_e2e_parallel_processing():
     """
-    Test Scenario 4: Parallel processing
+    Test Scenario 3: Parallel processing with concurrency limits.
 
-    Given: 5 sellers to process
-    When: process_sellers() with semaphore(3)
-    Then: Max 3 concurrent executions
+    Verifies that the system properly enforces the maximum concurrent seller
+    processing limit (MAX_CONCURRENT_SELLERS=3) using asyncio.Semaphore to
+    prevent overwhelming external services (Yahoo Auctions).
+
+    Given: 5 sellers to process concurrently
+    When: process_sellers() executes with semaphore(3)
+    Then: Maximum 3 concurrent executions occur at any given time, and all
+          5 sellers are processed successfully
+
+    Args:
+        None (uses mocked YahooAuctionScraper)
+
+    Returns:
+        None (assertions verify expected behavior)
     """
     # Given: Track concurrent execution count
     concurrent_count = 0
@@ -292,21 +201,104 @@ async def test_e2e_parallel_processing():
             "password": "pass",
         }
         yahoo_scraper = YahooAuctionScraper(session_manager, proxy_config)
-        sellers = await process_sellers(seller_links, yahoo_scraper)
+
+        try:
+            sellers = await process_sellers(seller_links, yahoo_scraper)
+        finally:
+            await yahoo_scraper.close()
 
     # Then: Verify max 3 concurrent
     assert max_concurrent <= 3
     assert len(sellers) == 5
 
 
-@pytest.mark.asyncio
-async def test_e2e_timeout_warning(caplog, monkeypatch, tmp_path):
+@pytest.fixture
+def mock_main_dependencies(tmp_path):
     """
-    Test Scenario 5: Timeout warning
+    Fixture providing mocked dependencies for main() function.
 
-    Given: Workflow takes > 5 minutes
-    When: main() executes
-    Then: Warning logged, processing continues
+    Returns a dictionary containing mocked configurations and instances:
+    - rapras_config: Mock RaprasConfig
+    - proxy_config: Mock ProxyConfig
+    - rapras_instance: AsyncMock RaprasScraper instance
+    - yahoo_instance: AsyncMock YahooAuctionScraper instance
+    - anime_filter: Mock AnimeFilter instance
+    - csv_exporter: Mock CSVExporter instance
+    """
+    mocks = {
+        "rapras_config": MagicMock(username="user", password="pass"),
+        "proxy_config": MagicMock(
+            url="http://proxy.example.com:3128", username="proxy_user", password="proxy_pass"
+        ),
+    }
+
+    # Mock Rapras scraper
+    rapras_instance = AsyncMock()
+    rapras_instance.login = AsyncMock()
+    rapras_instance.fetch_seller_links = AsyncMock(
+        return_value=[
+            {"seller_name": "セラー1", "link": "https://auctions.yahoo.co.jp/seller1"}
+        ]
+    )
+    rapras_instance.close = AsyncMock()
+    mocks["rapras_instance"] = rapras_instance
+
+    # Mock Yahoo scraper
+    yahoo_instance = AsyncMock()
+    yahoo_instance.fetch_seller_products = AsyncMock(
+        return_value={
+            "seller_name": "セラー1",
+            "seller_url": "https://auctions.yahoo.co.jp/seller1",
+            "product_titles": ["商品1"],
+        }
+    )
+    yahoo_instance.close = AsyncMock()
+    mocks["yahoo_instance"] = yahoo_instance
+
+    # Mock AnimeFilter
+    anime_filter = MagicMock()
+    anime_filter.filter_sellers = MagicMock(
+        return_value=[
+            {
+                "seller_name": "セラー1",
+                "seller_url": "https://auctions.yahoo.co.jp/seller1",
+                "is_anime_seller": True,
+            }
+        ]
+    )
+    mocks["anime_filter"] = anime_filter
+
+    # Mock CSVExporter
+    csv_exporter = MagicMock()
+    csv_exporter.export_intermediate_csv = MagicMock(return_value=str(tmp_path / "intermediate.csv"))
+    csv_exporter.export_final_csv = MagicMock(return_value=str(tmp_path / "final.csv"))
+    mocks["csv_exporter"] = csv_exporter
+
+    return mocks
+
+
+@pytest.mark.asyncio
+async def test_e2e_timeout_warning(caplog, monkeypatch, tmp_path, mock_main_dependencies):
+    """
+    Test Scenario 4: Timeout warning for long-running workflows.
+
+    Ensures that when the entire workflow execution exceeds the 5-minute
+    threshold (300 seconds), a warning is logged to alert operators while
+    allowing the processing to complete normally.
+
+    Given: Workflow execution time exceeds 5 minutes (simulated via time.time mock)
+    When: main() executes from start to finish
+    Then: A warning "Processing time exceeded 5 minutes" is logged, and
+          processing continues to completion
+
+    Args:
+        caplog: pytest fixture for capturing log messages
+        monkeypatch: pytest fixture for modifying sys.argv
+        tmp_path: pytest fixture providing temporary directory
+        mock_main_dependencies: Custom fixture providing mocked dependencies
+
+    Returns:
+        None (assertions verify expected behavior)
     """
     # Given: Mock command line arguments
     test_args = [
@@ -331,92 +323,47 @@ async def test_e2e_timeout_warning(caplog, monkeypatch, tmp_path):
             return start_time
         return end_time
 
+    # When: Execute main() with mocked dependencies
     with patch("time.time", side_effect=mock_time):
-        # Given: Mock all external dependencies
-        with patch("main.load_rapras_config") as mock_rapras_config:
-            with patch("main.load_proxy_config") as mock_proxy_config:
-                with patch("main.RaprasScraper") as MockRapras:
-                    with patch("main.YahooAuctionScraper") as MockYahoo:
-                        # Mock config
-                        mock_rapras_config.return_value = MagicMock(
-                            username="user", password="pass"
-                        )
-                        mock_proxy_config.return_value = MagicMock(
-                            url="http://proxy.example.com:3128",
-                            username="proxy_user",
-                            password="proxy_pass",
-                        )
-
-                        # Mock Rapras scraper
-                        mock_rapras_instance = AsyncMock()
-                        mock_rapras_instance.login = AsyncMock()
-                        mock_rapras_instance.fetch_seller_links = AsyncMock(
-                            return_value=[
-                                {
-                                    "seller_name": "セラー1",
-                                    "link": "https://auctions.yahoo.co.jp/seller1",
-                                }
-                            ]
-                        )
-                        mock_rapras_instance.close = AsyncMock()
-                        MockRapras.return_value = mock_rapras_instance
-
-                        # Mock Yahoo scraper
-                        mock_yahoo_instance = AsyncMock()
-                        mock_yahoo_instance.fetch_seller_products = AsyncMock(
-                            return_value={
-                                "seller_name": "セラー1",
-                                "seller_url": "https://auctions.yahoo.co.jp/seller1",
-                                "product_titles": ["商品1"],
-                            }
-                        )
-                        mock_yahoo_instance.close = AsyncMock()
-                        MockYahoo.return_value = mock_yahoo_instance
-
-                        # Mock AnimeFilter and CSVExporter
-                        with patch("main.AnimeFilter") as MockAnime:
-                            with patch("main.CSVExporter") as MockCSV:
-                                mock_anime_filter = MagicMock()
-                                mock_anime_filter.filter_sellers = MagicMock(
-                                    return_value=[
-                                        {
-                                            "seller_name": "セラー1",
-                                            "seller_url": "https://auctions.yahoo.co.jp/seller1",
-                                            "is_anime_seller": True,
-                                        }
-                                    ]
-                                )
-                                MockAnime.return_value = mock_anime_filter
-
-                                mock_csv_exporter = MagicMock()
-                                mock_csv_exporter.export_intermediate_csv = MagicMock(
-                                    return_value=str(tmp_path / "intermediate.csv")
-                                )
-                                mock_csv_exporter.export_final_csv = MagicMock(
-                                    return_value=str(tmp_path / "final.csv")
-                                )
-                                MockCSV.return_value = mock_csv_exporter
-
-                                # When: Execute main()
+        with patch("main.load_rapras_config", return_value=mock_main_dependencies["rapras_config"]):
+            with patch("main.load_proxy_config", return_value=mock_main_dependencies["proxy_config"]):
+                with patch("main.RaprasScraper", return_value=mock_main_dependencies["rapras_instance"]):
+                    with patch("main.YahooAuctionScraper", return_value=mock_main_dependencies["yahoo_instance"]):
+                        with patch("main.AnimeFilter", return_value=mock_main_dependencies["anime_filter"]):
+                            with patch("main.CSVExporter", return_value=mock_main_dependencies["csv_exporter"]):
                                 caplog.set_level(logging.WARNING, logger="main")
                                 await main()
 
-                        # Then: Verify timeout warning was logged
-                        assert any(
-                            "Processing time exceeded" in record.message
-                            and record.levelname == "WARNING"
-                            for record in caplog.records
-                        )
+    # Then: Verify timeout warning was logged
+    assert any(
+        "Processing time exceeded" in record.message and record.levelname == "WARNING"
+        for record in caplog.records
+    )
 
 
 @pytest.mark.asyncio
 async def test_e2e_csv_format_verification(tmp_path):
     """
-    Test: CSV format verification
+    Test Scenario 5: CSV format verification for intermediate and final outputs.
 
-    Given: Sellers with anime判定
-    When: CSVs are exported
-    Then: Intermediate CSV contains "未判定", Final CSV contains "はい"/"いいえ"
+    Validates that the CSV export process correctly formats the "二次創作"
+    (anime derivative work) column differently in intermediate vs final CSVs:
+    - Intermediate CSV: "未判定" (undetermined) for all sellers
+    - Final CSV: "はい" (yes) or "いいえ" (no) based on is_anime_seller flag
+
+    This ensures proper data flow through the pipeline and correct output
+    formatting for downstream consumers.
+
+    Given: Sellers with anime判定 results (True/False)
+    When: CSVExporter exports both intermediate and final CSVs
+    Then: Intermediate CSV contains "未判定" for all entries, and
+          Final CSV contains "はい" for True and "いいえ" for False
+
+    Args:
+        tmp_path: pytest fixture providing temporary directory for CSV output
+
+    Returns:
+        None (assertions verify expected behavior)
     """
     # Given: Prepare test data
     intermediate_sellers = [
