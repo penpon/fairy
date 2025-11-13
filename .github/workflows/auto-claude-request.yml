@@ -1,0 +1,64 @@
+name: Auto Claude Review Request
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  request-claude-review:
+    # CodeRabbitまたはCopilotからのレビューの場合のみ実行
+    if: |
+      github.event.review.user.login == 'coderabbitai[bot]' ||
+      github.event.review.user.login == 'copilot-pull-request-reviewer[bot]'
+
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Post Claude request comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const reviewUrl = context.payload.review.html_url;
+            const reviewerLogin = context.payload.review.user.login;
+
+            // 既に同じレビューへのClaudeリクエストが投稿されているか確認
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const alreadyRequested = comments.data.some(comment =>
+              comment.body.includes(reviewUrl) &&
+              comment.body.includes('@claude 必要であれば上記レビュー対応')
+            );
+
+            if (alreadyRequested) {
+              console.log('既にこのレビューに対してClaudeリクエストが投稿されています');
+              return;
+            }
+
+            // レビュアー名の判定
+            const reviewerName = reviewerLogin === 'coderabbitai[bot]'
+              ? 'CodeRabbit'
+              : 'Copilot';
+
+            // Claudeへのリクエストコメント投稿
+            const commentBody = [
+              '@claude 必要であれば上記レビュー対応をお願いします',
+              '',
+              `**レビュアー**: ${reviewerName}`,
+              `**レビューコメント**: ${reviewUrl}`
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: commentBody
+            });
+
+            console.log(`PR #${prNumber} にClaudeリクエストを投稿しました (レビュアー: ${reviewerName})`);

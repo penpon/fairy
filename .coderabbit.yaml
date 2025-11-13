@@ -1,0 +1,18 @@
+reviews:
+  enabled: true
+  request_changes: true
+  target_branches:
+    - main
+    - develop
+  auto_review: true
+  auto_fix: true
+  timeout: 900000
+  exclude_patterns:
+    - .spec-workflow/**
+    - "*.md"
+    - "*.txt"
+    - .github/**
+    - .venv/**
+  review_status: request_changes
+chat:
+  auto_reply: true

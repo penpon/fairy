@@ -70,7 +70,7 @@ jobs:
           elif [ ! -f coverage.xml ]; then
             echo "⚠️ カバレッジレポート（coverage.xml）が見つかりません"
           fi
-        } >> $GITHUB_STEP_SUMMARY
+        } >> "$GITHUB_STEP_SUMMARY"
 
   lint:
     runs-on: ubuntu-latest
