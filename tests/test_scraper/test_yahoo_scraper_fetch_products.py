@@ -4,36 +4,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from modules.scraper.session_manager import SessionManager
-from modules.scraper.yahoo_scraper import YahooAuctionScraper
-
 
 class TestFetchSellerProducts:
     """YahooAuctionScraper.fetch_seller_productsのテストクラス"""
-
-    @pytest.fixture
-    def temp_session_dir(self, tmp_path):
-        """一時的なセッションディレクトリを作成"""
-        return tmp_path / "test_sessions"
-
-    @pytest.fixture
-    def session_manager(self, temp_session_dir):
-        """SessionManagerインスタンスを作成"""
-        return SessionManager(session_dir=str(temp_session_dir))
-
-    @pytest.fixture
-    def proxy_config(self):
-        """プロキシ設定を作成"""
-        return {
-            "url": "http://164.70.96.2:3128",
-            "username": "test_proxy_user",
-            "password": "test_proxy_pass",
-        }
-
-    @pytest.fixture
-    def yahoo_scraper(self, session_manager, proxy_config):
-        """YahooAuctionScraperインスタンスを作成"""
-        return YahooAuctionScraper(session_manager=session_manager, proxy_config=proxy_config)
 
     @pytest.fixture
     def mock_playwright(self):
@@ -220,8 +193,8 @@ class TestFetchSellerProducts:
             assert len(result["product_titles"]) == 12
             assert attempt_counter["count"] == 2
 
-            # Then: リトライ待機が呼ばれた（2秒待機）
-            mock_sleep.assert_called_once_with(2)
+            # Then: リトライ待機が呼ばれた（1秒待機）
+            mock_sleep.assert_called_once_with(1)
 
         # クリーンアップ
         await yahoo_scraper.close()
@@ -250,11 +223,11 @@ class TestFetchSellerProducts:
             # Then: エラーメッセージに「3回のリトライ失敗」が含まれる
             assert "3回のリトライ" in str(exc_info.value)
 
-            # Then: exponential backoffが実行された（2s, 4s）
+            # Then: exponential backoffが実行された（1s, 2s）
             # 注: 3回目の試行後はリトライしないため、sleep呼び出しは2回のみ
             assert mock_sleep.call_count == 2
+            mock_sleep.assert_any_call(1)
             mock_sleep.assert_any_call(2)
-            mock_sleep.assert_any_call(4)
 
         # クリーンアップ
         await yahoo_scraper.close()
@@ -263,7 +236,7 @@ class TestFetchSellerProducts:
     async def test_fetch_seller_products_exponential_backoff_timing(
         self, yahoo_scraper, mock_playwright
     ):
-        """正常系: exponential backoffのタイミングが正しい（2s, 4s, 8s）"""
+        """正常系: exponential backoffのタイミングが正しい（1s, 2s, 4s）"""
         # Given: すべてのリトライが失敗
         seller_url = "https://auctions.yahoo.co.jp/sellinglist/test"
         mock_page = mock_playwright["page"]
@@ -284,7 +257,7 @@ class TestFetchSellerProducts:
             # 注: 3回目の試行後はリトライしないため、sleep呼び出しは2回のみ
             assert mock_sleep.call_count == 2
             call_args_list = [call[0][0] for call in mock_sleep.call_args_list]
-            assert call_args_list == [2, 4]
+            assert call_args_list == [1, 2]
 
         # クリーンアップ
         await yahoo_scraper.close()
@@ -358,3 +331,41 @@ class TestFetchSellerProducts:
 
         # クリーンアップ
         await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_products_proxy_configuration_applied(self, yahoo_scraper, mocker):
+        """正常系: プロキシ設定が正しく適用されることを確認
+
+        Given: プロキシ設定を持つYahooAuctionScraper
+        When: ブラウザが起動される
+        Then: プロキシ設定がブラウザコンテキストに適用される
+        """
+        # Given
+        mock_playwright_obj = AsyncMock()
+        mock_browser = AsyncMock()
+        mock_context = AsyncMock()
+        mock_page = AsyncMock()
+
+        mock_playwright_obj.chromium.launch = AsyncMock(return_value=mock_browser)
+        mock_browser.new_context = AsyncMock(return_value=mock_context)
+        mock_context.new_page = AsyncMock(return_value=mock_page)
+
+        # Mock async_playwright context manager
+        mocker.patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright_obj)),
+        )
+
+        yahoo_scraper.playwright = mock_playwright_obj
+        yahoo_scraper.browser = mock_browser
+
+        # When
+        await yahoo_scraper._launch_browser_with_proxy()
+
+        # Then
+        mock_browser.new_context.assert_called_once()
+        call_kwargs = mock_browser.new_context.call_args.kwargs
+        assert "proxy" in call_kwargs
+        assert call_kwargs["proxy"]["server"] == yahoo_scraper.proxy_config["url"]
+        assert call_kwargs["proxy"]["username"] == yahoo_scraper.proxy_config["username"]
+        assert call_kwargs["proxy"]["password"] == yahoo_scraper.proxy_config["password"]

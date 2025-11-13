@@ -4,36 +4,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from modules.scraper.session_manager import SessionManager
 from modules.scraper.yahoo_scraper import LoginError, ProxyAuthenticationError, YahooAuctionScraper
 
 
 class TestYahooAuctionScraper:
     """YahooAuctionScraperのテストクラス"""
-
-    @pytest.fixture
-    def temp_session_dir(self, tmp_path):
-        """一時的なセッションディレクトリを作成"""
-        return tmp_path / "test_sessions"
-
-    @pytest.fixture
-    def session_manager(self, temp_session_dir):
-        """SessionManagerインスタンスを作成"""
-        return SessionManager(session_dir=str(temp_session_dir))
-
-    @pytest.fixture
-    def proxy_config(self):
-        """プロキシ設定を作成"""
-        return {
-            "url": "http://164.70.96.2:3128",
-            "username": "test_proxy_user",
-            "password": "test_proxy_pass",
-        }
-
-    @pytest.fixture
-    def yahoo_scraper(self, session_manager, proxy_config):
-        """YahooAuctionScraperインスタンスを作成"""
-        return YahooAuctionScraper(session_manager=session_manager, proxy_config=proxy_config)
 
     @pytest.fixture
     def mock_playwright(self):
@@ -219,7 +194,7 @@ class TestYahooAuctionScraper:
         """正常系: 最大リトライ回数が正しく設定されることを確認"""
         # Then: デフォルトのリトライ回数が3
         assert yahoo_scraper._max_retries == 3
-        assert yahoo_scraper._retry_delays == [2, 4, 8]
+        assert yahoo_scraper._retry_delays == [1, 2, 4]
 
     @pytest.mark.asyncio
     async def test_timeout_configuration(self, yahoo_scraper):
@@ -581,3 +556,21 @@ class TestYahooAuctionScraper:
             assert result == "不明なセラー"
 
         await yahoo_scraper.close()
+
+
+class TestRetryBackoffConstants:
+    """modules.config.constantsのリトライバックオフ定数のテスト"""
+
+    def test_retry_backoff_seconds_constant(self):
+        """正常系: RETRY_BACKOFF_SECONDS定数が正しく定義されることを確認
+
+        Given: modules.config.constantsのRETRY_BACKOFF_SECONDS定数
+        When: 定数をインポートする
+        Then: exponential backoff値（1, 2, 4）を含む
+        """
+        # Given/When
+        from modules.config.constants import RETRY_BACKOFF_SECONDS
+
+        # Then
+        assert RETRY_BACKOFF_SECONDS == (1, 2, 4)
+        assert len(RETRY_BACKOFF_SECONDS) == 3

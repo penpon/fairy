@@ -4,6 +4,7 @@ import asyncio
 
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 
+from modules.config.constants import RETRY_BACKOFF_SECONDS
 from modules.scraper.session_manager import SessionManager
 from modules.utils.logger import get_logger
 
@@ -61,7 +62,7 @@ class YahooAuctionScraper:
         self.context: BrowserContext | None = None
         self.page: Page | None = None
         self._max_retries = 3
-        self._retry_delays = [2, 4, 8]  # 指数バックオフ（秒）
+        self._retry_delays = list(RETRY_BACKOFF_SECONDS)
         self._timeout = 30000  # 30秒（ミリ秒）
         self._sms_timeout = 180  # 3分（秒）  # 3分（秒）
 
