@@ -366,6 +366,6 @@ class TestFetchSellerProducts:
         mock_browser.new_context.assert_called_once()
         call_kwargs = mock_browser.new_context.call_args.kwargs
         assert "proxy" in call_kwargs
-        assert call_kwargs["proxy"]["server"] == "http://164.70.96.2:3128"
-        assert call_kwargs["proxy"]["username"] == "test_proxy_user"
-        assert call_kwargs["proxy"]["password"] == "test_proxy_pass"
+        assert call_kwargs["proxy"]["server"] == yahoo_scraper.proxy_config["url"]
+        assert call_kwargs["proxy"]["username"] == yahoo_scraper.proxy_config["username"]
+        assert call_kwargs["proxy"]["password"] == yahoo_scraper.proxy_config["password"]
