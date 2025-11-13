@@ -507,3 +507,77 @@ class TestYahooAuctionScraper:
                 await yahoo_scraper._prompt_for_sms_code()
 
             assert "SMS code input timeout" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_is_logged_in_on_login_page(self, yahoo_scraper, mock_playwright):
+        """異常系: is_logged_inでlogin.yahoo.co.jpにいる場合はFalse"""
+        mock_page = mock_playwright["page"]
+        mock_page.url = "https://login.yahoo.co.jp/config/login"
+
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await yahoo_scraper._launch_browser_with_proxy()
+
+            # When: is_logged_inを呼ぶ
+            result = await yahoo_scraper.is_logged_in()
+
+            # Then: Falseが返される
+            assert result is False
+
+        await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_is_logged_in_on_yahoo_without_login_form(self, yahoo_scraper, mock_playwright):
+        """正常系: is_logged_inでyahoo.co.jpにいてログインフォームがない場合はTrue"""
+        mock_page = mock_playwright["page"]
+        mock_page.url = "https://auctions.yahoo.co.jp/"
+
+        # ログアウトリンクもユーザーメニューもない
+        async def query_selector_side_effect(selector):
+            if "logout" in selector:
+                return None
+            elif selector == "button[aria-label*='ユーザーメニュー']":
+                return None
+            elif selector == 'input[name="login"]':
+                return None  # ログインフォームがない
+            return None
+
+        mock_page.query_selector.side_effect = query_selector_side_effect
+
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await yahoo_scraper._launch_browser_with_proxy()
+
+            # When: is_logged_inを呼ぶ
+            result = await yahoo_scraper.is_logged_in()
+
+            # Then: Trueが返される
+            assert result is True
+
+        await yahoo_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_extract_seller_name_returns_unknown(self, yahoo_scraper, mock_playwright):
+        """異常系: _extract_seller_nameでセラー名が取得できない場合は"不明なセラー"を返す"""
+        mock_page = mock_playwright["page"]
+
+        # すべてのセレクタがNoneを返す
+        mock_page.query_selector.return_value = None
+
+        with patch(
+            "modules.scraper.yahoo_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await yahoo_scraper._launch_browser_with_proxy()
+
+            # When: _extract_seller_nameを呼ぶ
+            result = await yahoo_scraper._extract_seller_name()
+
+            # Then: "不明なセラー"が返される
+            assert result == "不明なセラー"
+
+        await yahoo_scraper.close()

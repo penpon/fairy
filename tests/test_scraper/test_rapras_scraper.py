@@ -715,3 +715,292 @@ class TestRaprasScraper:
             assert len(result) == 0
 
         await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_missing_seller_name_elem(
+        self, rapras_scraper, mock_playwright
+    ):
+        """異常系: seller_name_elem (td:nth-child(2)) が見つからない"""
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()  # ログイン状態
+
+        mock_row = MagicMock()
+
+        async def row_query_selector(sel):
+            if sel == "td:nth-child(2)":
+                return None  # seller_name_elemがない
+            elif sel == "td:nth-child(5)":
+                return AsyncMock(inner_text=AsyncMock(return_value="150,000円"))
+            elif sel == "td:nth-child(2) a":
+                return AsyncMock(
+                    get_attribute=AsyncMock(
+                        return_value="https://auctions.yahoo.co.jp/sellinglist/seller"
+                    )
+                )
+            return None
+
+        mock_row.query_selector = row_query_selector
+
+        mock_table = MagicMock()
+
+        async def table_query_selector(sel):
+            if sel == "tbody tr":
+                return mock_row
+            return None
+
+        async def table_query_selector_all(sel):
+            if sel == "tbody tr":
+                return [mock_row]
+            return []
+
+        mock_table.query_selector = table_query_selector
+        mock_table.query_selector_all = table_query_selector_all
+
+        async def page_query_selector_all(sel):
+            if sel == "table":
+                return [mock_table]
+            return []
+
+        mock_page.query_selector_all = page_query_selector_all
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+            result = await rapras_scraper.fetch_seller_links(
+                start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+            )
+
+            # Then: 空のリスト（行がスキップされる）
+            assert len(result) == 0
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_empty_seller_name(self, rapras_scraper, mock_playwright):
+        """異常系: seller_nameが空文字列"""
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()  # ログイン状態
+
+        mock_row = MagicMock()
+
+        async def row_query_selector(sel):
+            if sel == "td:nth-child(2)":
+                return AsyncMock(inner_text=AsyncMock(return_value="   "))  # 空白のみ
+            elif sel == "td:nth-child(5)":
+                return AsyncMock(inner_text=AsyncMock(return_value="150,000円"))
+            elif sel == "td:nth-child(2) a":
+                return AsyncMock(
+                    get_attribute=AsyncMock(
+                        return_value="https://auctions.yahoo.co.jp/sellinglist/seller"
+                    )
+                )
+            return None
+
+        mock_row.query_selector = row_query_selector
+
+        mock_table = MagicMock()
+
+        async def table_query_selector(sel):
+            if sel == "tbody tr":
+                return mock_row
+            return None
+
+        async def table_query_selector_all(sel):
+            if sel == "tbody tr":
+                return [mock_row]
+            return []
+
+        mock_table.query_selector = table_query_selector
+        mock_table.query_selector_all = table_query_selector_all
+
+        async def page_query_selector_all(sel):
+            if sel == "table":
+                return [mock_table]
+            return []
+
+        mock_page.query_selector_all = page_query_selector_all
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+            result = await rapras_scraper.fetch_seller_links(
+                start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+            )
+
+            # Then: 空のリスト（行がスキップされる）
+            assert len(result) == 0
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_missing_price_elem(self, rapras_scraper, mock_playwright):
+        """異常系: price_elem (td:nth-child(5)) が見つからない"""
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()  # ログイン状態
+
+        mock_row = MagicMock()
+
+        async def row_query_selector(sel):
+            if sel == "td:nth-child(2)":
+                return AsyncMock(inner_text=AsyncMock(return_value="セラーF"))
+            elif sel == "td:nth-child(5)":
+                return None  # price_elemがない
+            elif sel == "td:nth-child(2) a":
+                return AsyncMock(
+                    get_attribute=AsyncMock(
+                        return_value="https://auctions.yahoo.co.jp/sellinglist/seller_f"
+                    )
+                )
+            return None
+
+        mock_row.query_selector = row_query_selector
+
+        mock_table = MagicMock()
+
+        async def table_query_selector(sel):
+            if sel == "tbody tr":
+                return mock_row
+            return None
+
+        async def table_query_selector_all(sel):
+            if sel == "tbody tr":
+                return [mock_row]
+            return []
+
+        mock_table.query_selector = table_query_selector
+        mock_table.query_selector_all = table_query_selector_all
+
+        async def page_query_selector_all(sel):
+            if sel == "table":
+                return [mock_table]
+            return []
+
+        mock_page.query_selector_all = page_query_selector_all
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+            result = await rapras_scraper.fetch_seller_links(
+                start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+            )
+
+            # Then: 空のリスト（行がスキップされる）
+            assert len(result) == 0
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_missing_link_elem(self, rapras_scraper, mock_playwright):
+        """異常系: link_elem (td:nth-child(2) a) が見つからない"""
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()  # ログイン状態
+
+        mock_row = MagicMock()
+
+        async def row_query_selector(sel):
+            if sel == "td:nth-child(2)":
+                return AsyncMock(inner_text=AsyncMock(return_value="セラーG"))
+            elif sel == "td:nth-child(5)":
+                return AsyncMock(inner_text=AsyncMock(return_value="150,000円"))
+            elif sel == "td:nth-child(2) a":
+                return None  # link_elemがない
+            return None
+
+        mock_row.query_selector = row_query_selector
+
+        mock_table = MagicMock()
+
+        async def table_query_selector(sel):
+            if sel == "tbody tr":
+                return mock_row
+            return None
+
+        async def table_query_selector_all(sel):
+            if sel == "tbody tr":
+                return [mock_row]
+            return []
+
+        mock_table.query_selector = table_query_selector
+        mock_table.query_selector_all = table_query_selector_all
+
+        async def page_query_selector_all(sel):
+            if sel == "table":
+                return [mock_table]
+            return []
+
+        mock_page.query_selector_all = page_query_selector_all
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+            result = await rapras_scraper.fetch_seller_links(
+                start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+            )
+
+            # Then: 空のリスト（行がスキップされる）
+            assert len(result) == 0
+
+        await rapras_scraper.close()
+
+    @pytest.mark.asyncio
+    async def test_fetch_seller_links_empty_link(self, rapras_scraper, mock_playwright):
+        """異常系: linkが空 (hrefがNone)"""
+        mock_page = mock_playwright["page"]
+        mock_page.query_selector.return_value = MagicMock()  # ログイン状態
+
+        mock_row = MagicMock()
+
+        async def row_query_selector(sel):
+            if sel == "td:nth-child(2)":
+                return AsyncMock(inner_text=AsyncMock(return_value="セラーH"))
+            elif sel == "td:nth-child(5)":
+                return AsyncMock(inner_text=AsyncMock(return_value="150,000円"))
+            elif sel == "td:nth-child(2) a":
+                return AsyncMock(get_attribute=AsyncMock(return_value=None))  # hrefがNone
+            return None
+
+        mock_row.query_selector = row_query_selector
+
+        mock_table = MagicMock()
+
+        async def table_query_selector(sel):
+            if sel == "tbody tr":
+                return mock_row
+            return None
+
+        async def table_query_selector_all(sel):
+            if sel == "tbody tr":
+                return [mock_row]
+            return []
+
+        mock_table.query_selector = table_query_selector
+        mock_table.query_selector_all = table_query_selector_all
+
+        async def page_query_selector_all(sel):
+            if sel == "table":
+                return [mock_table]
+            return []
+
+        mock_page.query_selector_all = page_query_selector_all
+
+        with patch(
+            "modules.scraper.rapras_scraper.async_playwright",
+            return_value=mock_playwright["async_pw_instance"],
+        ):
+            await rapras_scraper.login("test_user", "test_password")
+            result = await rapras_scraper.fetch_seller_links(
+                start_date="2025-08-01", end_date="2025-10-31", min_price=100000
+            )
+
+            # Then: 空のリスト（行がスキップされる）
+            assert len(result) == 0
+
+        await rapras_scraper.close()

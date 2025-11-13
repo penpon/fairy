@@ -289,3 +289,62 @@ class TestLogger:
                 if isinstance(handler, logging.FileHandler):
                     handler.close()
                     logger.removeHandler(handler)
+
+    def test_logger_with_empty_log_dir(self, monkeypatch, caplog):
+        """異常系: LOG_DIRが空文字列の場合にコンソール出力のみにフォールバックすることを確認"""
+        # Given: LOG_DIRを空文字列に設定
+        monkeypatch.setenv("LOG_DIR", "")
+
+        # When: Loggerを取得
+        logger = get_logger("test_empty_log_dir")
+
+        # Then: コンソールハンドラのみが設定される（ファイルハンドラなし）
+        assert len(logger.handlers) == 1
+        assert isinstance(logger.handlers[0], logging.StreamHandler)
+
+        # Then: 警告ログが出力される
+        with caplog.at_level(logging.WARNING):
+            logger.warning("Test warning")
+        assert "ファイルログの初期化に失敗しました" in caplog.text or len(logger.handlers) == 1
+
+    def test_logger_with_whitespace_only_log_dir(self, monkeypatch, caplog):
+        """異常系: LOG_DIRが空白のみの場合にコンソール出力のみにフォールバックすることを確認"""
+        # Given: LOG_DIRを空白のみに設定
+        monkeypatch.setenv("LOG_DIR", "   ")
+
+        # When: Loggerを取得
+        logger = get_logger("test_whitespace_log_dir")
+
+        # Then: コンソールハンドラのみが設定される
+        assert len(logger.handlers) == 1
+        assert isinstance(logger.handlers[0], logging.StreamHandler)
+
+    def test_logger_with_invalid_log_dir_permission(self, tmp_path, monkeypatch, caplog):
+        """異常系: LOG_DIRに書き込み権限がない場合にコンソール出力のみにフォールバックすることを確認"""
+        import os
+        import stat
+
+        # Given: 書き込み権限のないディレクトリを作成
+        log_dir = tmp_path / "readonly_logs"
+        log_dir.mkdir()
+
+        # Unix系のみで権限を変更（Windowsではスキップ）
+        if os.name != "nt":
+            log_dir.chmod(stat.S_IRUSR | stat.S_IXUSR)  # 読み取りと実行のみ、書き込み不可
+
+            try:
+                monkeypatch.setenv("LOG_DIR", str(log_dir))
+
+                # When: Loggerを取得（ファイルログ初期化に失敗）
+                with caplog.at_level(logging.WARNING):
+                    logger = get_logger("test_permission_error")
+
+                # Then: コンソールハンドラのみが設定される
+                assert len(logger.handlers) == 1
+                assert isinstance(logger.handlers[0], logging.StreamHandler)
+
+                # Then: 警告メッセージが含まれる
+                assert "ファイルログの初期化に失敗しました" in caplog.text
+            finally:
+                # クリーンアップ: 権限を戻す
+                log_dir.chmod(stat.S_IRWXU)

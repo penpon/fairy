@@ -128,6 +128,20 @@ class TestIsAnimeTitle:
             filter_instance.is_anime_title(title)
         assert "Gemini CLI execution failed" in str(exc_info.value)
 
+    def test_is_anime_title_handles_timeout(self, mocker):
+        """Test is_anime_title handles TimeoutExpired gracefully."""
+        # Given: Gemini CLI times out
+        mock_run = mocker.patch("subprocess.run")
+        mock_run.side_effect = subprocess.TimeoutExpired("gemini", 30)
+        filter_instance = AnimeFilter()
+        title = "テストタイトル"
+
+        # When: is_anime_title is called
+        # Then: Should raise GeminiAPIError with timeout message
+        with pytest.raises(GeminiAPIError) as exc_info:
+            filter_instance.is_anime_title(title)
+        assert "timeout" in str(exc_info.value).lower()
+
     def test_is_anime_title_with_empty_title(self, mocker):
         """Test is_anime_title with empty title."""
         # Given: Empty title string
