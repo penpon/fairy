@@ -1,3 +1,4 @@
+
 # Python
 __pycache__/
 *.py[cod]
@@ -60,3 +61,4 @@ Thumbs.db
 .spec-workflow/approvals/
 .spec-workflow/user-templates/
 .spec-workflow/templates/
+*Implementation Logs/
