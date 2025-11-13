@@ -34,7 +34,7 @@ jobs:
 
             const alreadyRequested = comments.data.some(comment =>
               comment.body.includes(reviewUrl) &&
-              comment.body.includes('@claude 必要であれば上記レビュー対応')
+              comment.body.includes('@claude 必要であればレビュー対応')
             );
 
             if (alreadyRequested) {
