@@ -22,7 +22,12 @@ from modules.config.constants import (
     MIN_SELLER_PRICE,
     TIMEOUT_WARNING_SECONDS,
 )
-from modules.config.settings import load_proxy_config, load_rapras_config
+from modules.config.settings import (
+    load_browser_config,
+    load_dotenv_file,
+    load_proxy_config,
+    load_rapras_config,
+)
 from modules.scraper.rapras_scraper import RaprasScraper
 from modules.scraper.session_manager import SessionManager
 from modules.scraper.yahoo_scraper import YahooAuctionScraper
@@ -152,8 +157,13 @@ async def main() -> None:
 
     # Step 2: Initialize scrapers
     logger.info("Step 1: Initialize scrapers")
+    
+    # Load environment variables from .env file
+    load_dotenv_file()
+    
     rapras_config = load_rapras_config()
     proxy_config = load_proxy_config()
+    browser_config = load_browser_config()
     session_manager = SessionManager()
 
     # Initialize scrapers to None for safe cleanup
@@ -162,7 +172,10 @@ async def main() -> None:
 
     try:
         # Create scrapers
-        rapras_scraper = RaprasScraper(session_manager=session_manager)
+        rapras_scraper = RaprasScraper(
+            session_manager=session_manager,
+            headless=browser_config.headless,
+        )
         yahoo_scraper = YahooAuctionScraper(
             session_manager=session_manager,
             proxy_config={
@@ -170,6 +183,7 @@ async def main() -> None:
                 "username": proxy_config.username,
                 "password": proxy_config.password,
             },
+            headless=browser_config.headless,
         )
         await rapras_scraper.login(rapras_config.username, rapras_config.password)
         logger.info("✅ Rapras login successful")
