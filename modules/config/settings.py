@@ -10,10 +10,12 @@ __all__ = [
     "RaprasConfig",
     "YahooConfig",
     "ProxyConfig",
+    "BrowserConfig",
     "load_dotenv_file",
     "load_rapras_config",
     "load_yahoo_config",
     "load_proxy_config",
+    "load_browser_config",
 ]
 
 
@@ -67,6 +69,13 @@ class ProxyConfig:
     url: str
     username: str
     password: str
+
+
+@dataclass
+class BrowserConfig:
+    """ブラウザ設定"""
+
+    headless: bool
 
 
 def load_rapras_config() -> RaprasConfig:
@@ -142,3 +151,19 @@ def load_proxy_config() -> ProxyConfig:
         )
 
     return ProxyConfig(url=url, username=username, password=password)
+
+
+def load_browser_config() -> BrowserConfig:
+    """ブラウザ設定を環境変数から読み込み
+
+    Returns:
+        BrowserConfig: ブラウザ設定
+
+    Notes:
+        BROWSER_HEADLESS環境変数が "true", "1", "yes" のいずれかの場合にヘッドレスモードが有効になります。
+        未設定の場合はデフォルトでヘッドレスモード（True）になります。
+    """
+    headless_str = os.getenv("BROWSER_HEADLESS", "true").lower()
+    headless = headless_str in ("true", "1", "yes")
+
+    return BrowserConfig(headless=headless)
