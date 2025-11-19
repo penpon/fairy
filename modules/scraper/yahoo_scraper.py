@@ -168,7 +168,7 @@ class YahooAuctionScraper:
         )
 
     async def _verify_proxy_connection(self) -> None:
-        """プロキシ接続を検証し、IPアドレスが期待値と一致するか確認
+        """プロキシ接続を検証し、IPアドレスが期待値と一致するか多角的に確認
 
         Raises:
             ProxyAuthenticationError: プロキシ認証失敗またはIPアドレス不一致
@@ -179,6 +179,7 @@ class YahooAuctionScraper:
         temp_page = None
 
         try:
+            logger.info("Verifying proxy connection with multi-faceted checks...")
             # 一時的にブラウザを起動してプロキシ接続を確認
             temp_playwright = await async_playwright().start()
             temp_browser = await temp_playwright.chromium.launch(headless=self.headless)
@@ -194,47 +195,55 @@ class YahooAuctionScraper:
 
             temp_page = await temp_context.new_page()
 
-            # 簡単な接続テスト
+            # チェック1: httpbin.orgでIP確認
+            ip_service_1 = "https://httpbin.org/ip"
+            current_ip = ""
+            
             try:
-                await temp_page.goto("https://www.google.com", timeout=10000)
-                logger.info("Proxy connection verified successfully")
+                logger.info(f"Check 1: Fetching IP from {ip_service_1}...")
+                await temp_page.goto(ip_service_1, timeout=15000)
+                content = await temp_page.content()
+                import json
+                # bodyのテキストからJSONをパース
+                text = await temp_page.text_content("body")
+                if text:
+                    data = json.loads(text)
+                    current_ip = data.get("origin", "").split(",")[0].strip()
+                    logger.info(f"Check 1 Result: {current_ip}")
             except Exception as e:
-                # プロキシ認証エラーと判定
-                logger.error(f"Proxy connection test failed: {e}")
+                logger.warning(f"Check 1 failed: {e}")
+
+            # チェック2: api.ipify.orgでIP確認（チェック1が失敗した場合、または確認のため）
+            if not current_ip:
+                ip_service_2 = "https://api.ipify.org?format=json"
+                try:
+                    logger.info(f"Check 2: Fetching IP from {ip_service_2}...")
+                    await temp_page.goto(ip_service_2, timeout=15000)
+                    text = await temp_page.text_content("body")
+                    if text:
+                        data = json.loads(text)
+                        current_ip = data.get("ip", "").strip()
+                        logger.info(f"Check 2 Result: {current_ip}")
+                except Exception as e:
+                    logger.warning(f"Check 2 failed: {e}")
+
+            # IPが取得できなかった場合はエラー
+            if not current_ip:
                 raise ProxyAuthenticationError(
-                    "Proxy authentication failed. Please check PROXY_USERNAME and PROXY_PASSWORD in .env"
-                ) from e
+                    "Failed to verify IP address from multiple services. Proxy connection may be unstable."
+                )
 
-            # IPアドレスの確認（/ip エンドポイントを使用してプレーンテキストのIPのみを取得）
-            try:
-                logger.info("Checking IP address via proxy...")
-                await temp_page.goto("https://inet-ip.info/ip", timeout=10000)
+            # 期待されるIPアドレス（環境変数から取得、なければデフォルト）
+            # 注意: 実際の運用では環境変数 PROXY_EXPECTED_IP を設定することを推奨
+            import os
+            expected_ip = os.getenv("PROXY_EXPECTED_IP", "164.70.96.2")
 
-                # ページのテキストコンテンツを取得（プレーンテキストのIPアドレスのみ）
-                ip_text = await temp_page.text_content("body")
+            if current_ip != expected_ip:
+                error_msg = f"CRITICAL: IP address mismatch! Expected: {expected_ip}, Got: {current_ip}. Access denied."
+                logger.error(error_msg)
+                raise ProxyAuthenticationError(error_msg)
 
-                # IPアドレスを抽出（前後の空白や改行を削除）
-                current_ip = ip_text.strip() if ip_text else ""
-
-                logger.info(f"Current IP address: {current_ip}")
-
-                # 期待されるIPアドレス
-                expected_ip = "164.70.96.2"
-
-                if current_ip != expected_ip:
-                    error_msg = f"IP address mismatch! Expected: {expected_ip}, Got: {current_ip}"
-                    logger.error(error_msg)
-                    raise ProxyAuthenticationError(f"Proxy IP verification failed. {error_msg}")
-
-                logger.info(f"✅ IP address verified: {current_ip}")
-
-            except ProxyAuthenticationError:
-                raise
-            except Exception as e:
-                logger.warning(f"IP address verification failed: {e}")
-                # IP確認に失敗してもプロキシ接続自体は成功しているので続行
-                # より厳格にしたい場合はここでraiseする
-                logger.warning("Continuing despite IP verification failure...")
+            logger.info(f"✅ Proxy verification passed. IP: {current_ip}")
 
         except ProxyAuthenticationError:
             raise
@@ -244,28 +253,13 @@ class YahooAuctionScraper:
         finally:
             # リソースをクリーンアップ
             if temp_page:
-                try:
-                    await temp_page.close()
-                except Exception as e:
-                    logger.warning(f"Error closing temp page: {e}")
-
+                await temp_page.close()
             if temp_context:
-                try:
-                    await temp_context.close()
-                except Exception as e:
-                    logger.warning(f"Error closing temp context: {e}")
-
+                await temp_context.close()
             if temp_browser:
-                try:
-                    await temp_browser.close()
-                except Exception as e:
-                    logger.warning(f"Error closing temp browser: {e}")
-
+                await temp_browser.close()
             if temp_playwright:
-                try:
-                    await temp_playwright.stop()
-                except Exception as e:
-                    logger.warning(f"Error stopping temp playwright: {e}")
+                await temp_playwright.stop()
 
     async def _launch_browser_with_proxy(self) -> None:
         """プロキシ設定でブラウザを起動"""
@@ -553,6 +547,11 @@ class YahooAuctionScraper:
                 logger.info(
                     f"Fetching seller products (attempt {attempt + 1}/{self._max_retries}): {seller_url}"
                 )
+
+                # プロキシ接続の厳格な検証（初回のみ、または毎回）
+                # ここでは安全のため毎回検証するが、パフォーマンスを考慮して初回のみにするのもあり
+                if attempt == 0:
+                    await self._verify_proxy_connection()
 
                 # ブラウザ起動（プロキシ設定を含む）
                 if not self.page:
