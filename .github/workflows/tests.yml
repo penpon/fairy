@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
 
     steps:
     - name: チェックアウト
@@ -38,7 +38,7 @@ jobs:
         set -e
         echo "=== ユニットテストを実行中 ==="
         echo "注: 統合テスト（-m integration）はCI環境ではスキップされます"
-        uv run pytest tests/ -v -m "not integration" --cov=modules --cov-report=xml --cov-report=term-missing --timeout=300 --tb=short
+        uv run pytest tests/ -n auto --dist loadscope -v -m "not integration" --cov=modules --cov-report=xml --cov-report=term-missing --timeout=300 --tb=short
         echo ""
         echo "=== カバレッジ率を確認中 ==="
         uv run coverage report --format=text
@@ -100,9 +100,6 @@ jobs:
     - name: 静的解析とフォーマットチェック
       run: |
         set -e
-        echo "=== Black (コードフォーマット) ==="
-        uv run black modules/ tests/
-        echo ""
         echo "=== Ruff (リント・インポート順序チェック) ==="
         uv run ruff check modules/ tests/
         echo ""
@@ -120,7 +117,7 @@ jobs:
         if ! git diff --quiet modules/ tests/; then
           echo "📝 フォーマット変更を検出しました。自動コミットします..."
           git add modules/ tests/
-          git commit -m "style: Blackによる自動フォーマット適用" -m "🤖 自動修正by GitHub Actions"
+          git commit -m "style: Ruffによる自動フォーマット適用" -m "🤖 自動修正by GitHub Actions"
           git push
           echo "✅ フォーマット変更をコミット＆プッシュしました"
         else
@@ -167,7 +164,7 @@ jobs:
       run: |
         echo "=== 依存パッケージの脆弱性をチェック中 (pip-audit) ==="
         set +e
-        timeout 60 uv run pip-audit
+        timeout 120 uv run pip-audit
         exit_code=$?
         set -e
 
