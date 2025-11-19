@@ -287,32 +287,22 @@ class RaprasScraper:
             logger.info(f"Fetching seller links from {url}")
             await self.page.goto(url, timeout=self._timeout)
 
-            # セラーテーブルを特定してから行を取得
-            # まず、2列目にリンク（a要素）を持つ最初のテーブルを探す
-            tables = await self.page.query_selector_all("table")
-            seller_table = None
-            for table in tables:
-                # テーブルの最初の行に2列目のリンクがあるかチェック
-                first_row = await table.query_selector("tbody tr")
-                if first_row:
-                    link_elem = await first_row.query_selector("td:nth-child(2) a")
-                    if link_elem:
-                        seller_table = table
-                        break
+            # セラーテーブルを特定（table#analyse）
+            seller_table = await self.page.query_selector("table#analyse")
 
             if not seller_table:
-                logger.warning("Seller table not found")
+                logger.warning("Seller table (table#analyse) not found")
                 return []
 
-            # 特定したテーブルから行を取得
-            rows = await seller_table.query_selector_all("tbody tr")
+            # 特定したテーブルからデータ行を取得（tr.adata）
+            rows = await seller_table.query_selector_all("tbody tr.adata")
             logger.info(f"Found {len(rows)} seller rows")
 
             sellers = []
             for row in rows:
                 try:
-                    # セラー名を取得（2列目）
-                    seller_name_elem = await row.query_selector("td:nth-child(2)")
+                    # セラー名を取得（1列目）
+                    seller_name_elem = await row.query_selector("td:nth-child(1)")
                     if not seller_name_elem:
                         continue
                     seller_name = (await seller_name_elem.inner_text()).strip()
@@ -322,14 +312,16 @@ class RaprasScraper:
                         logger.debug("Skipping row with empty seller name")
                         continue
 
-                    # 落札価格合計を取得（5列目）
-                    price_elem = await row.query_selector("td:nth-child(5)")
+                    # 落札価格合計を取得（4列目）
+                    price_elem = await row.query_selector("td:nth-child(4)")
                     if not price_elem:
                         continue
                     price_text = (await price_elem.inner_text()).strip()
 
-                    # 価格文字列から数値を抽出（例: "150,000円" → 150000）
-                    price_value = int(price_text.replace(",", "").replace("円", ""))
+                    # 価格文字列から数値を抽出（例: "3,609,176 (3,609,176)" → 3609176）
+                    # スペースで分割して最初の値を取得
+                    price_str = price_text.split()[0] if price_text else "0"
+                    price_value = int(price_str.replace(",", "").replace("円", ""))
 
                     # min_price未満はスキップ
                     if price_value < min_price:
@@ -338,8 +330,8 @@ class RaprasScraper:
                         )
                         continue
 
-                    # セラーリンクを取得
-                    link_elem = await row.query_selector("td:nth-child(2) a")
+                    # セラーリンクを取得（1列目）
+                    link_elem = await row.query_selector("td:nth-child(1) a")
                     if not link_elem:
                         continue
                     link = await link_elem.get_attribute("href")
